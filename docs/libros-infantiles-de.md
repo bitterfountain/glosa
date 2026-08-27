@@ -8,8 +8,8 @@ Niveles: **infantil** (versos y cuentos cortos, vocabulario cotidiano), **princi
 
 | Fuente | Libros verificados | Licencia | CORS | Integración | Veredicto |
 |---|---|---|---|---|---|
-| Project Gutenberg | 40 (todos con `pg{id}.epub` 200 y `lang=de`) | Dominio público (EE. UU.) | No, pero ya hay proxy `/gb/` | Solo el ID, como el Top 100 | **Usar** (núcleo del catálogo) |
-| Wikisource en alemán | 15 páginas/colecciones comprobadas | Dominio público (ediciones de 1812 a 1900 transcritas de escaneos) | **Sí** (`access-control-allow-origin: *`) | API `parse` como el catálogo árabe | **Usar** para Grimm, Struwwelpeter y Max und Moritz en edición original |
+| Project Gutenberg | 57 (todos con `pg{id}.epub` 200 y `lang=de`) | Dominio público (EE. UU.) | No, pero ya hay proxy `/gb/` | Solo el ID, como el Top 100 | **Usar** (núcleo del catálogo) |
+| Wikisource en alemán | 19 páginas/colecciones comprobadas | Dominio público (ediciones de 1812 a 1900 transcritas de escaneos) | **Sí** (`access-control-allow-origin: *`) | API `parse` como el catálogo árabe | **Usar** para Grimm, Struwwelpeter y Max und Moritz en edición original |
 | Projekt Gutenberg-DE (projekt-gutenberg.org) | 0 | Empresa privada; uso solo lectura, sin redistribución | No | Solo HTML dentro de su portal, URLs cambiadas en 2024 | **Descartar** |
 | zeno.org | 0 | Copyright de la edición digital | No (HEAD da 405) | | Descartar |
 
@@ -144,3 +144,119 @@ Autores con página propia y sin obra útil verificada: `Hans Christian Andersen
 - **Nesthäkchen (Else Ury)**: no está en Gutenberg (búsqueda "Nesthäkchen" y "Ury" sin resultados). Ury murió en Auschwitz en 1943: dominio público en la UE desde 2014, pero las obras posteriores a 1928 no lo son en EE. UU., y Gutenberg no las tiene. Fuera de la lista.
 - **Kästner, Lindgren, Preußler, Ende, Janosch**: derechos vigentes. No buscar.
 - **Pinocchio en alemán, Till Eulenspiegel, Campe (Robinson der Jüngere), Andersen en de.wikisource**: sin resultados en Gutenberg (`l.de`) ni en Wikisource con esos títulos.
+
+## Recomendación: qué meter en el catálogo y cómo
+
+Un catálogo "Infantil / principiantes DE" de 38 títulos en lista estática (misma mecánica que el español: `source` `gb` o `ws` más identificador, orden dado por nosotros). Gutenberg cubre casi todo; Wikisource aporta lo que a Gutenberg le falta (Grimm en edición original cuento a cuento, Struwwelpeter y Max und Moritz en texto limpio y ligero, Hebel) y sirve de reserva.
+
+Una diferencia con el español que conviene tener en cuenta: en alemán hay muchísimo libro ilustrado (Bilderbuch) donde el texto sin las imágenes pierde sentido (Wurzelkinder, Thurmuhr, Struwwelpeter). Para esos, la variante con imágenes es la buena aunque pese 1 a 4 MB; se reserva `noimages` para los que pasan de 8 MB (Max und Moritz, Bechstein, Grimm 77905, Ewald).
+
+**Bloque A. Infantil (versos, cuentos y fábulas cortos), 16 títulos**
+
+1. Der Struwwelpeter, Heinrich Hoffmann (gb 24571, con imágenes; alternativa ws `Der Struwwelpeter`)
+2. Max und Moritz, Wilhelm Busch (gb 17161 con `pg17161.epub`; alternativa ws `Max und Moritz`, 7 Streiche)
+3. Hans Huckebein, Wilhelm Busch (gb 2322)
+4. König Nußknacker und der arme Reinhold, Hoffmann (gb 32034)
+5. Etwas von den Wurzelkindern, Olfers (gb 57412, con imágenes)
+6. Ri-Ra-Rutsch: Alte und neue Kinderreime (gb 70178)
+7. Grimm, cuentos escogidos de la edición de 1857 (ws, agrupar en un solo libro las ocho páginas verificadas: Froschkönig, Hänsel und Grethel, Rothkäppchen, Bremer Stadtmusikanten, Sneewittchen, Aschenputtel, Dornröschen, Rumpelstilzchen; ampliar con más títulos exactos del índice `Kinder- und Haus-Märchen Band 1 (1857)`)
+8. Deutsche Märchen gesammelt durch die Brüder Grimm (gb 77905, `pg77905.epub`)
+9. Märchen-Sammlung, anónimo ilustrado (gb 23787)
+10. Gänsemütterchens Märchen, Perrault (gb 42900)
+11. Märchen für Kinder, Andersen (gb 19163)
+12. Märchen (Kubin): Die Nachtigall, Die kleine Seejungfrau, Der Reisekamerad, Andersen (gb 50965)
+13. Ludwig Bechsteins Märchenbuch (gb 63465, `pg63465.epub`)
+14. Von Kindern und Katzen, Storm (gb 8917)
+15. Alaeddin und die Wunderlampe (gb 22413)
+16. Die Regentrude, Storm (gb 8923)
+
+**Bloque B. Principiante (lecturas graduadas y textos cortos), 10 títulos**
+
+17. Märchen und Erzählungen für Anfänger, 1. Teil, Guerber (gb 35794)
+18. Märchen und Erzählungen für Anfänger, 2. Teil, Guerber (gb 45189)
+19. Hin und Her: Ein Buch für die Kinder, Fick (gb 8392)
+20. Ährenlese: A German Reader (gb 49503)
+21. Ausgewählte Fabeln, Lessing (gb 9375)
+22. Fabeln und Erzählungen, Lessing (gb 9158)
+23. Schatzkästlein des rheinischen Hausfreundes, Hebel (ws; elegir las anécdotas, como `Kannitverstan`, y saltar las piezas de calendario)
+24. Das erste Schuljahr, Sapper (gb 58300)
+25. Tiere und Pflanzen in Wald und Feld, Buckley (gb 58989)
+26. Moni der Geißbub, Spyri (gb 9860)
+
+**Bloque C. Intermedio y juvenil, 12 títulos**
+
+27. Heidis Lehr- und Wanderjahre, Spyri (gb 7500)
+28. Heidi kann brauchen, was es gelernt hat, Spyri (gb 7512)
+29. Die Biene Maja und ihre Abenteuer, Bonsels (gb 21021)
+30. Märchen-Almanach auf das Jahr 1826 (Kalif Storch, Der kleine Muck), Hauff (gb 6638)
+31. Märchen-Almanach auf das Jahr 1827 (Der Zwerg Nase), Hauff (gb 6639)
+32. Märchen-Almanach auf das Jahr 1828 (Das kalte Herz), Hauff (gb 6640)
+33. Die Geschichte von Kalif Storch, Hauff, suelto (ws `Die Geschichte von Kalif Storch`; y `Der Zwerg Nase` como segundo suelto)
+34. Wunderbare Reise des kleinen Nils Holgersson, Lagerlöf (gb 31114)
+35. Alice's Abenteuer im Wunderland, Carroll (gb 19778)
+36. Kasperle auf Reisen, Siebe (gb 36813)
+37. Neue Kindergeschichten aus Oberheudorf, Siebe (gb 49738)
+38. Der Trotzkopf, Rhoden (gb 31309)
+
+Reserva (verificados, fuera de la lista por espacio): Spyri 9861, 9859, 7888, 20780, 22570; Siebe 50277, 47734; Schmid 54586, 56520, 43332 (ortografía de 1818-1826); Gellert 9335; Winter 25722; Schieber 75672; Schwarzkopf 62943; Aanrud 48902; Koch 37940; Ewald 67897; Schoppe 48541; Normann 56127; Bassewitz 31204 (versión teatral); Brentano 4501 (difícil); Vamba 53973.
+
+Fuera por formato: los audiolibros de LibriVox (20050, 20051, 19791, 19792, 21148, 21149, 19636). Fuera por derechos o por no existir en fuente libre: Nesthäkchen, Kästner y todo lo posterior a 1929.
+
+**Cómo integrarlo**
+
+- Gutenberg: reutilizar `openBook`, con `noimages` por libro para pedir `pg{id}.epub` en los que pasan de 8 MB.
+- Wikisource: reutilizar el flujo del catálogo árabe con dos ajustes. (a) Los libros de Grimm y Hebel son listas fijas de páginas sueltas (no un índice con subpáginas): el catálogo lleva el array de títulos y se pide cada uno con `action=parse&prop=text`. (b) Limpieza: quitar la tabla `Textdaten` (primer `<table>` de la página), el aviso "Für eine seitenweise Ansicht...", los `<span class="pagenum">` y la navegación de principio y final; en Struwwelpeter y Max und Moritz recorrer los enlaces `Der Struwwelpeter/...` y `Max und Moritz/...` en el orden del HTML del índice. Pedir las subpáginas en serie con pausa de 300 a 500 ms: la API devuelve 429 al encadenar 20 seguidas.
+- Projekt Gutenberg-DE queda fuera salvo que en el futuro se negocie una licencia; es la única fuente con Nesthäkchen y Bechstein completo en texto moderno.
+
+```json
+[
+  {"source":"gb","id":24571,"title":"Der Struwwelpeter","author":"Heinrich Hoffmann","level":"infantil"},
+  {"source":"gb","id":17161,"title":"Max und Moritz","author":"Wilhelm Busch","level":"infantil","noimages":true},
+  {"source":"gb","id":2322,"title":"Hans Huckebein","author":"Wilhelm Busch","level":"infantil"},
+  {"source":"gb","id":32034,"title":"König Nußknacker und der arme Reinhold","author":"Heinrich Hoffmann","level":"infantil"},
+  {"source":"gb","id":57412,"title":"Etwas von den Wurzelkindern","author":"Sibylle von Olfers","level":"infantil"},
+  {"source":"gb","id":70178,"title":"Ri-Ra-Rutsch: Alte und neue Kinderreime","author":"varios","level":"infantil"},
+  {"source":"ws","lang":"de","title":"Der Froschkönig oder der eiserne Heinrich (1857)","author":"Brüder Grimm","level":"infantil"},
+  {"source":"ws","lang":"de","title":"Hänsel und Grethel (1857)","author":"Brüder Grimm","level":"infantil"},
+  {"source":"ws","lang":"de","title":"Rothkäppchen (1857)","author":"Brüder Grimm","level":"infantil"},
+  {"source":"ws","lang":"de","title":"Die Bremer Stadtmusikanten (1857)","author":"Brüder Grimm","level":"infantil"},
+  {"source":"ws","lang":"de","title":"Sneewittchen (1857)","author":"Brüder Grimm","level":"infantil"},
+  {"source":"ws","lang":"de","title":"Aschenputtel (1857)","author":"Brüder Grimm","level":"infantil"},
+  {"source":"ws","lang":"de","title":"Dornröschen (1857)","author":"Brüder Grimm","level":"infantil"},
+  {"source":"ws","lang":"de","title":"Rumpelstilzchen (1857)","author":"Brüder Grimm","level":"infantil"},
+  {"source":"ws","lang":"de","title":"Der Struwwelpeter","author":"Heinrich Hoffmann","level":"infantil"},
+  {"source":"ws","lang":"de","title":"Max und Moritz","author":"Wilhelm Busch","level":"infantil"},
+  {"source":"gb","id":77905,"title":"Deutsche Märchen gesammelt durch die Brüder Grimm","author":"Brüder Grimm","level":"infantil","noimages":true},
+  {"source":"gb","id":23787,"title":"Märchen-Sammlung","author":"anónimo","level":"infantil"},
+  {"source":"gb","id":42900,"title":"Gänsemütterchens Märchen","author":"Charles Perrault","level":"infantil"},
+  {"source":"gb","id":19163,"title":"Märchen für Kinder","author":"H. C. Andersen","level":"infantil"},
+  {"source":"gb","id":50965,"title":"Märchen (Die Nachtigall, Die kleine Seejungfrau, Der Reisekamerad)","author":"H. C. Andersen","level":"infantil"},
+  {"source":"gb","id":63465,"title":"Ludwig Bechsteins Märchenbuch","author":"Ludwig Bechstein","level":"infantil","noimages":true},
+  {"source":"gb","id":8917,"title":"Von Kindern und Katzen, und wie sie die Nine begruben","author":"Theodor Storm","level":"infantil"},
+  {"source":"gb","id":22413,"title":"Alaeddin und die Wunderlampe","author":"Curt Moreck","level":"infantil"},
+  {"source":"gb","id":8923,"title":"Die Regentrude","author":"Theodor Storm","level":"infantil"},
+  {"source":"gb","id":35794,"title":"Märchen und Erzählungen für Anfänger. Erster Teil","author":"H. A. Guerber","level":"principiante"},
+  {"source":"gb","id":45189,"title":"Märchen und Erzählungen für Anfänger. Zweiter Teil","author":"H. A. Guerber","level":"principiante"},
+  {"source":"gb","id":8392,"title":"Hin und Her: Ein Buch für die Kinder","author":"Henry H. Fick","level":"principiante"},
+  {"source":"gb","id":49503,"title":"Ährenlese: A German Reader with Practical Exercises","author":"varios","level":"principiante"},
+  {"source":"gb","id":9375,"title":"Ausgewählte Fabeln","author":"Gotthold Ephraim Lessing","level":"principiante"},
+  {"source":"gb","id":9158,"title":"Fabeln und Erzählungen","author":"Gotthold Ephraim Lessing","level":"principiante"},
+  {"source":"ws","lang":"de","title":"Schatzkästlein des rheinischen Hausfreundes","author":"Johann Peter Hebel","level":"principiante"},
+  {"source":"gb","id":58300,"title":"Das erste Schuljahr","author":"Agnes Sapper","level":"principiante"},
+  {"source":"gb","id":58989,"title":"Tiere und Pflanzen in Wald und Feld","author":"Arabella B. Buckley","level":"principiante"},
+  {"source":"gb","id":9860,"title":"Moni der Geißbub","author":"Johanna Spyri","level":"principiante"},
+  {"source":"gb","id":7500,"title":"Heidis Lehr- und Wanderjahre","author":"Johanna Spyri","level":"intermedio"},
+  {"source":"gb","id":7512,"title":"Heidi kann brauchen, was es gelernt hat","author":"Johanna Spyri","level":"intermedio"},
+  {"source":"gb","id":21021,"title":"Die Biene Maja und ihre Abenteuer","author":"Waldemar Bonsels","level":"intermedio"},
+  {"source":"gb","id":6638,"title":"Märchen-Almanach auf das Jahr 1826 (Die Karawane)","author":"Wilhelm Hauff","level":"intermedio"},
+  {"source":"gb","id":6639,"title":"Märchen-Almanach auf das Jahr 1827 (Der Zwerg Nase)","author":"Wilhelm Hauff","level":"intermedio"},
+  {"source":"gb","id":6640,"title":"Märchen-Almanach auf das Jahr 1828 (Das kalte Herz)","author":"Wilhelm Hauff","level":"intermedio"},
+  {"source":"ws","lang":"de","title":"Die Geschichte von Kalif Storch","author":"Wilhelm Hauff","level":"intermedio"},
+  {"source":"ws","lang":"de","title":"Der Zwerg Nase","author":"Wilhelm Hauff","level":"intermedio"},
+  {"source":"gb","id":31114,"title":"Wunderbare Reise des kleinen Nils Holgersson mit den Wildgänsen","author":"Selma Lagerlöf","level":"intermedio"},
+  {"source":"gb","id":19778,"title":"Alice's Abenteuer im Wunderland","author":"Lewis Carroll","level":"intermedio"},
+  {"source":"gb","id":36813,"title":"Kasperle auf Reisen","author":"Josephine Siebe","level":"intermedio"},
+  {"source":"gb","id":49738,"title":"Neue Kindergeschichten aus Oberheudorf","author":"Josephine Siebe","level":"intermedio"},
+  {"source":"gb","id":31309,"title":"Der Trotzkopf","author":"Emmy von Rhoden","level":"intermedio"}
+]
+```
