@@ -599,3 +599,9 @@ body[data-src="zh"] .popup__word h3 { font-family: "Microsoft YaHei", "PingFang 
 .segmented--flags .segmented__btn--flag { padding: 4px 8px; display: inline-flex; align-items: center; }
 .segmented--flags .segmented__btn--flag .flag { width: 26px; height: 17px; opacity: .6; }
 .segmented--flags .segmented__btn--flag.is-active .flag { opacity: 1; }
+
+/* ---------------------------------------------------------------- modales en móvil: la X arriba a la derecha */
+@media (max-width: 700px) {
+  .modal__head { position: relative; padding-right: 56px; }
+  .modal__tools > [data-close-catalog], .modal__tools > [data-close-library], .modal__tools > [data-close-langs] { position: absolute; top: 12px; right: 12px; }
+}
