@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Glosa · lector de libros con diccionario</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232563eb'/%3E%3Cpath d='M9 8h9a4 4 0 0 1 4 4v12H13a4 4 0 0 1-4-4V8z' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<header class="toolbar" id="toolbar">
+  <div class="toolbar__bar">
+    <span class="brand__logo" aria-hidden="true"></span>
+    <span class="brand__name">Glo<span>sa</span></span>
+    <span class="toolbar__title" id="book-title" hidden><span class="toolbar__title-text" id="book-title-text"></span><span class="toolbar__title-pages" id="book-title-pages"></span></span>
+    <button class="btn btn--icon toolbar__burger" id="btn-menu" data-i18n-title="menu" aria-expanded="false" aria-controls="toolbar-groups">
+      <svg class="icon-burger" viewBox="0 0 20 20"><path d="M3 5.5h14M3 10h14M3 14.5h14"/></svg>
+      <svg class="icon-close" viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></svg>
+    </button>
+  </div>
+
+  <div class="toolbar__groups" id="toolbar-groups">
+  <div class="toolbar__group toolbar__brand">
+    <button class="btn btn--primary" id="btn-open" data-i18n-title="open.title">
+      <svg viewBox="0 0 20 20"><path d="M3 5.5A1.5 1.5 0 0 1 4.5 4h3.6l1.6 1.8h5.8A1.5 1.5 0 0 1 17 7.3v7.2a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 14.5z"/></svg>
+      <span data-i18n="open">Abrir libro</span>
+    </button>
+    <input type="file" id="file-input" accept=".pdf,.epub,.html,.htm,.xhtml,.txt,application/pdf,application/epub+zip,text/html,text/plain" hidden>
+    <button type="button" class="pair-badge" id="pair-badge" data-i18n-title="langs.badge.title" aria-haspopup="dialog"></button>
+  </div>
+
+  <div class="toolbar__group toolbar__nav" id="nav-controls" hidden>
+    <button class="btn btn--icon" id="btn-prev" data-i18n-title="prev"><svg viewBox="0 0 20 20"><path d="M12.5 4 6.5 10l6 6"/></svg></button>
+    <label class="page-indicator">
+      <input type="number" id="page-input" min="1" value="1" aria-label="Página">
+      <span>/ <b id="page-count">0</b></span>
+    </label>
+    <button class="btn btn--icon" id="btn-next" data-i18n-title="next"><svg viewBox="0 0 20 20"><path d="m7.5 4 6 6-6 6"/></svg></button>
+    <span class="toolbar__sep"></span>
+    <button class="btn btn--icon" id="btn-zoom-out" data-i18n-title="zoom.out"><svg viewBox="0 0 20 20"><path d="M4 10h12"/></svg></button>
+    <button class="btn btn--text" id="btn-zoom-fit" data-i18n-title="zoom.fit"><span id="zoom-label">100%</span></button>
+    <button class="btn btn--icon" id="btn-zoom-in" data-i18n-title="zoom.in"><svg viewBox="0 0 20 20"><path d="M10 4v12M4 10h12"/></svg></button>
+    <span class="toolbar__sep"></span>
+    <div class="segmented" role="tablist">
+      <button class="segmented__btn is-active" data-mode="page" role="tab" data-i18n="mode.page" data-i18n-title="mode.page.title">Página</button>
+      <button class="segmented__btn" data-mode="text" role="tab" data-i18n="mode.text" data-i18n-title="mode.text.title">Texto</button>
+    </div>
+  </div>
+
+  <div class="toolbar__group toolbar__right">
+    <form class="search" id="search-form" role="search">
+      <svg viewBox="0 0 20 20"><circle cx="8.5" cy="8.5" r="5"/><path d="m12.5 12.5 4 4"/></svg>
+      <input type="search" id="search-input" data-i18n-placeholder="search.placeholder" placeholder="Buscar palabra…" autocomplete="off" spellcheck="false">
+    </form>
+    <button class="btn btn--icon" id="btn-theme" data-i18n-title="theme.toggle">
+      <svg class="icon-sun" viewBox="0 0 20 20"><circle cx="10" cy="10" r="3.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.3 4.3l1.4 1.4M14.3 14.3l1.4 1.4M4.3 15.7l1.4-1.4M14.3 5.7l1.4-1.4"/></svg>
+      <svg class="icon-moon" viewBox="0 0 20 20"><path d="M16 12.5A7 7 0 0 1 7.5 4a7 7 0 1 0 8.5 8.5z"/></svg>
+    </button>
+    <button class="btn btn--icon" id="btn-library" data-i18n-title="lib.title">
+      <svg viewBox="0 0 20 20"><path d="M3 4.5h4.5v11H3zM7.5 4.5H12v11H7.5zM12.6 5.2l3.9-1 2.6 10.7-3.9 1z"/></svg>
+      <span class="badge" id="library-count" hidden>0</span>
+    </button>
+    <button class="btn btn--icon" id="btn-vocab" data-i18n-title="vocab">
+      <svg viewBox="0 0 20 20"><path d="M5 3.5h10a1 1 0 0 1 1 1v12l-6-3-6 3v-12a1 1 0 0 1 1-1z"/></svg>
+      <span class="badge" id="vocab-count" hidden>0</span>
+    </button>
+    <button class="btn btn--icon" id="btn-settings" data-i18n-title="settings">
+      <svg viewBox="0 0 20 20"><path d="M16.6 5.9a3.9 3.9 0 0 1-5 4.7l-6.1 6.1a1.6 1.6 0 0 1-2.2-2.2l6.1-6.1a3.9 3.9 0 0 1 4.7-5l-2.3 2.3 0.6 2.1 2.1 0.6z"/></svg>
+    </button>
+  </div>
+  </div>
+</header>
+
+<main class="workspace" id="workspace">
+  <section class="viewer" id="viewer" tabindex="0">
+    <div class="empty" id="empty-state">
+      <div class="empty__card">
+        <div class="empty__icon" aria-hidden="true"></div>
+        <h1 data-i18n="empty.h1">Lee en otro idioma sin salir de la página</h1>
+        <p data-i18n="empty.p">Abre un libro en PDF, EPUB, HTML o TXT, pulsa cualquier palabra y verás su traducción al instante. Elige la fuente y el tamaño con los que mejor leas.</p>
+        <div class="empty__actions">
+          <button class="btn btn--primary btn--lg" id="btn-open-empty" data-i18n="empty.open">Abrir un libro</button>
+          <button class="btn btn--lg btn--secondary" id="btn-continue" hidden>
+            <svg viewBox="0 0 20 20"><path d="M3 4.5h4.5v11H3zM7.5 4.5H12v11H7.5zM12.6 5.2l3.9-1 2.6 10.7-3.9 1z"/></svg>
+            <span data-i18n="lib.continue">Seguir leyendo</span>
+          </button>
+        </div>
+        <p class="empty__hint" data-i18n="empty.hint">…o arrastra el fichero aquí</p>
+        <div class="empty__catalogs">
+          <p class="empty__catalogs-label" data-i18n="catalog.pick">O empieza con un clásico de Project Gutenberg:</p>
+          <div class="empty__catalogs-row">
+            <button class="btn btn--catalog" type="button" data-catalog-lang="en">
+              <svg viewBox="0 0 20 20"><path d="M4 4h4v12H4zM9 4h4v12H9zM14.2 4.6l3.6.9-2.8 11.2-3.6-.9z"/></svg>
+              <span data-i18n="catalog.button.en">Top 100 en inglés</span>
+            </button>
+            <button class="btn btn--catalog" type="button" data-catalog-lang="es">
+              <svg viewBox="0 0 20 20"><path d="M4 4h4v12H4zM9 4h4v12H9zM14.2 4.6l3.6.9-2.8 11.2-3.6-.9z"/></svg>
+              <span data-i18n="catalog.button.es">Top 100 en español</span>
+            </button>
+            <button class="btn btn--catalog" type="button" data-catalog-lang="it">
+              <svg viewBox="0 0 20 20"><path d="M4 4h4v12H4zM9 4h4v12H9zM14.2 4.6l3.6.9-2.8 11.2-3.6-.9z"/></svg>
+              <span data-i18n="catalog.button.it">Top 100 en italiano</span>
+            </button>
+            <button class="btn btn--catalog" type="button" data-catalog-lang="de">
+              <svg viewBox="0 0 20 20"><path d="M4 4h4v12H4zM9 4h4v12H9zM14.2 4.6l3.6.9-2.8 11.2-3.6-.9z"/></svg>
+              <span data-i18n="catalog.button.de">Top 100 en alemán</span>
+            </button>
+            <button class="btn btn--catalog" type="button" data-catalog-lang="ar">
+              <svg viewBox="0 0 20 20"><path d="M4 4h4v12H4zM9 4h4v12H9zM14.2 4.6l3.6.9-2.8 11.2-3.6-.9z"/></svg>
+              <span data-i18n="catalog.button.ar">Clásicos en árabe</span>
+            </button>
+            <button class="btn btn--catalog" type="button" data-catalog-lang="zh">
+              <svg viewBox="0 0 20 20"><path d="M4 4h4v12H4zM9 4h4v12H9zM14.2 4.6l3.6.9-2.8 11.2-3.6-.9z"/></svg>
+              <span data-i18n="catalog.button.zh">Top 100 en chino</span>
+            </button>
+          </div>
+        </div>
+        <div class="empty__catalogs empty__catalogs--beg" hidden>
+          <p class="empty__catalogs-label" data-i18n="catalog.beginners">Infantil y principiantes: lecturas fáciles para empezar</p>
+          <div class="empty__catalogs-row" id="beginners-row"></div>
+        </div>
+        <p class="empty__meta" id="dict-meta"></p>
+      </div>
+      <section class="recent" id="recent" hidden>
+        <h2 class="recent__title" data-i18n="lib.recent">Continuar leyendo</h2>
+        <div class="recent__list" id="recent-list"></div>
+      </section>
+    </div>
+    <div class="pages" id="pages" hidden></div>
+  </section>
+
+  <aside class="drawer" id="vocab-drawer" hidden>
+    <header class="drawer__head">
+      <h2 data-i18n="vocab.title">Vocabulario</h2>
+      <div class="drawer__actions">
+        <button class="btn btn--text" id="vocab-export" data-i18n="vocab.export" data-i18n-title="vocab.export.title">Exportar</button>
+        <button class="btn btn--text btn--danger" id="vocab-clear" data-i18n="vocab.clear" data-i18n-title="vocab.clear.title">Vaciar</button>
+        <button class="btn btn--icon" data-close-drawer="vocab-drawer" data-i18n-title="close"><svg viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></svg></button>
+      </div>
+    </header>
+    <div class="drawer__body">
+      <p class="drawer__empty" id="vocab-empty" data-i18n="vocab.empty">Guarda palabras desde el popup de traducción y las verás aquí.</p>
+      <ul class="vocab-list" id="vocab-list"></ul>
+    </div>
+  </aside>
+
+  <aside class="drawer" id="settings-drawer" hidden>
+    <header class="drawer__head">
+      <h2 data-i18n="settings">Ajustes</h2>
+      <button class="btn btn--icon" data-close-drawer="settings-drawer" data-i18n-title="close"><svg viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></svg></button>
+    </header>
+    <div class="drawer__body settings">
+
+      <h3 data-i18n="settings.dictionary">Diccionario</h3>
+      <div class="field">
+        <span class="field__label" data-i18n="settings.pair">Par de idiomas</span>
+        <select id="opt-pair" class="select"></select>
+      </div>
+      <label class="field field--row">
+        <span class="field__label" data-i18n="settings.autoDetect">Detectar el idioma del libro al abrirlo y elegir el diccionario</span>
+        <input type="checkbox" id="opt-autodetect" class="switch">
+      </label>
+      <label class="field field--row">
+        <span class="field__label" data-i18n="settings.zhSimplified">Libros en chino: mostrar en caracteres simplificados</span>
+        <input type="checkbox" id="opt-zh-simplified" class="switch">
+      </label>
+      <label class="field field--row">
+        <span class="field__label"><span data-i18n="settings.online">Consultar online si no está en el diccionario local</span><small data-i18n="settings.online.hint">Usa MyMemory y Wiktionary. Envía solo la palabra consultada.</small></span>
+        <input type="checkbox" id="opt-online" class="switch">
+      </label>
+      <label class="field field--row">
+        <span class="field__label" data-i18n="settings.speak">Pronunciar la palabra al abrir el popup</span>
+        <input type="checkbox" id="opt-speak" class="switch">
+      </label>
+      <div class="field">
+        <span class="field__label" data-i18n="settings.loaded">Diccionario cargado</span>
+        <p class="field__value" id="settings-dict-meta"></p>
+        <button class="btn btn--text" id="btn-load-dict" data-i18n="settings.loadOther">Cargar otro diccionario (.js / .json)…</button>
+        <input type="file" id="dict-input" accept=".js,.json,application/json,text/javascript" hidden>
+      </div>
+
+      <h3 data-i18n="settings.appearance">Apariencia</h3>
+      <div class="field">
+        <span class="field__label" data-i18n="settings.uiLang">Idioma de la interfaz</span>
+        <select id="opt-uilang" class="select">
+          <option value="auto" data-i18n="uiLang.auto">Según el diccionario</option>
+          <option value="es">Español</option>
+          <option value="en">English</option>
+          <option value="it">Italiano</option>
+          <option value="de">Deutsch</option>
+        </select>
+      </div>
+      <div class="field">
+        <span class="field__label" data-i18n="settings.theme">Tema</span>
+        <div class="segmented segmented--full" id="theme-seg">
+          <button class="segmented__btn" data-theme="light" data-i18n="theme.light">Claro</button>
+          <button class="segmented__btn" data-theme="dark" data-i18n="theme.dark">Oscuro</button>
+          <button class="segmented__btn" data-theme="auto" data-i18n="theme.auto">Sistema</button>
+        </div>
+      </div>
+      <label class="field field--row">
+        <span class="field__label" data-i18n="settings.invert">Invertir colores del PDF en modo oscuro</span>
+        <input type="checkbox" id="opt-invert" class="switch">
+      </label>
+
+      <h3 data-i18n="settings.reading">Lectura (vista Texto)</h3>
+      <div class="field">
+        <span class="field__label" data-i18n="settings.font">Fuente</span>
+        <select id="opt-font" class="select"></select>
+      </div>
+      <div class="field">
+        <span class="field__label"><span data-i18n="settings.size">Tamaño</span> <b id="font-size-label">18 px</b></span>
+        <input type="range" id="opt-font-size" min="12" max="36" step="1" value="18" class="range">
+      </div>
+      <div class="field">
+        <span class="field__label"><span data-i18n="settings.lineHeight">Interlineado</span> <b id="line-height-label">1.6</b></span>
+        <input type="range" id="opt-line-height" min="1.2" max="2.2" step="0.1" value="1.6" class="range">
+      </div>
+      <div class="field">
+        <span class="field__label"><span data-i18n="settings.measure">Ancho de columna</span> <b id="measure-label">70</b></span>
+        <input type="range" id="opt-measure" min="45" max="110" step="5" value="70" class="range">
+      </div>
+      <div class="field">
+        <span class="field__label" data-i18n="settings.align">Alineación</span>
+        <div class="segmented segmented--full" id="align-seg">
+          <button class="segmented__btn" data-align="left" data-i18n="align.left">Izquierda</button>
+          <button class="segmented__btn" data-align="justify" data-i18n="align.justify">Justificado</button>
+        </div>
+      </div>
+
+      <h3 data-i18n="settings.shortcuts">Atajos</h3>
+      <ul class="shortcuts">
+        <li><kbd>←</kbd><kbd>→</kbd> <span data-i18n="sc.pages">página o capítulo anterior / siguiente</span></li>
+        <li><kbd>+</kbd><kbd>-</kbd> <span data-i18n="sc.zoom">zoom</span></li>
+        <li><kbd>T</kbd> <span data-i18n="sc.mode">alternar vista Página / Texto</span></li>
+        <li><kbd>D</kbd> <span data-i18n="sc.theme">alternar tema</span></li>
+        <li><kbd>Esc</kbd> <span data-i18n="sc.esc">cerrar popup o panel</span></li>
+      </ul>
+    </div>
+  </aside>
+</main>
+
+<div class="popup" id="popup" role="dialog" aria-live="polite" hidden>
+  <div class="popup__arrow"></div>
+  <header class="popup__head">
+    <div class="popup__word">
+      <h3 id="popup-word">palabra</h3>
+      <span class="popup__lemma" id="popup-lemma" hidden></span>
+    </div>
+    <div class="popup__actions">
+      <button class="btn btn--icon btn--sm" id="popup-speak" data-i18n-title="popup.speak"><svg viewBox="0 0 20 20"><path d="M3 8v4h3l4 3V5L6 8zM13 7.5a3.5 3.5 0 0 1 0 5M15.5 5a7 7 0 0 1 0 10"/></svg></button>
+      <button class="btn btn--icon btn--sm" id="popup-save" data-i18n-title="popup.save"><svg viewBox="0 0 20 20"><path d="M5 3.5h10a1 1 0 0 1 1 1v12l-6-3-6 3v-12a1 1 0 0 1 1-1z"/></svg></button>
+      <button class="btn btn--icon btn--sm" id="popup-close" data-i18n-title="popup.close"><svg viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></svg></button>
+    </div>
+  </header>
+  <div class="popup__body" id="popup-body"></div>
+  <footer class="popup__foot" id="popup-foot"></footer>
+</div>
+
+<div class="modal" id="catalog-modal" role="dialog" aria-modal="true" aria-labelledby="catalog-title" hidden>
+  <div class="modal__backdrop" data-close-catalog></div>
+  <div class="modal__panel">
+    <header class="modal__head">
+      <div class="modal__titles">
+        <h2 id="catalog-title">Top 100</h2>
+        <p class="modal__sub"><span data-i18n="catalog.sub">Los más descargados de Project Gutenberg, dominio público. Pulsa un libro y se abre en Glosa.</span> <a id="catalog-source" class="popup__link" href="https://www.gutenberg.org/browse/scores/top" target="_blank" rel="noopener" data-i18n="catalog.source">Ver la lista original ↗</a></p>
+      </div>
+      <div class="modal__tools">
+        <div class="segmented" id="catalog-lang">
+          <button class="segmented__btn" data-lang="en">English</button>
+          <button class="segmented__btn" data-lang="es">Español</button>
+          <button class="segmented__btn" data-lang="it">Italiano</button>
+          <button class="segmented__btn" data-lang="de">Deutsch</button>
+          <button class="segmented__btn" data-lang="ar">العربية</button>
+          <button class="segmented__btn" data-lang="zh">中文</button>
+        </div>
+        <div class="segmented" id="catalog-level" hidden>
+          <button class="segmented__btn is-active" data-level="all" data-i18n="catalog.level.all">Todos</button>
+          <button class="segmented__btn" data-level="beg" data-i18n="catalog.level.beg">Infantil y principiantes</button>
+        </div>
+        <label class="search search--modal">
+          <svg viewBox="0 0 20 20"><circle cx="8.5" cy="8.5" r="5"/><path d="m12.5 12.5 4 4"/></svg>
+          <input type="search" id="catalog-filter" data-i18n-placeholder="catalog.filter" placeholder="Filtrar por título o autor…" autocomplete="off">
+        </label>
+        <button class="btn btn--icon" data-close-catalog data-i18n-title="close"><svg viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></svg></button>
+      </div>
+    </header>
+    <p class="modal__status" id="catalog-status" hidden></p>
+    <div class="modal__body">
+      <div class="books" id="catalog-grid"></div>
+    </div>
+    <footer class="modal__foot"><span id="catalog-count"></span><span id="catalog-credit" data-i18n="catalog.credit">Textos y portadas: Project Gutenberg (gutenberg.org)</span></footer>
+  </div>
+</div>
+
+<div class="modal" id="library-modal" role="dialog" aria-modal="true" aria-labelledby="library-title" hidden>
+  <div class="modal__backdrop" data-close-library></div>
+  <div class="modal__panel modal__panel--narrow">
+    <header class="modal__head">
+      <div class="modal__titles">
+        <h2 id="library-title" data-i18n="lib.title">Biblioteca</h2>
+        <p class="modal__sub" data-i18n="lib.sub">Los libros que has abierto, guardados en este navegador con la página por la que ibas.</p>
+      </div>
+      <div class="modal__tools">
+        <button class="btn btn--icon" data-close-library data-i18n-title="close"><svg viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></svg></button>
+      </div>
+    </header>
+    <div class="modal__body">
+      <p class="drawer__empty" id="library-empty" data-i18n="lib.empty">Todavía no has abierto ningún libro.</p>
+      <div class="shelf" id="library-list"></div>
+    </div>
+    <footer class="modal__foot"><span id="library-usage"></span><span data-i18n="lib.note">Se guardan solo en este navegador; si borras sus datos, desaparecen.</span></footer>
+  </div>
+</div>
+
+<div class="modal" id="langs-modal" role="dialog" aria-modal="true" aria-labelledby="langs-title" hidden>
+  <div class="modal__backdrop" data-close-langs></div>
+  <div class="modal__panel modal__panel--langs">
+    <header class="modal__head">
+      <div class="modal__titles">
+        <h2 id="langs-title" data-i18n="langs.title">Elige tus idiomas</h2>
+        <p class="modal__sub" data-i18n="langs.hint">Puedes cambiarlos cuando quieras pulsando las banderas de la barra.</p>
+      </div>
+      <div class="modal__tools">
+        <button class="btn btn--icon" data-close-langs data-i18n-title="close"><svg viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></svg></button>
+      </div>
+    </header>
+    <div class="modal__body langs">
+      <section class="langs__group">
+        <h3 data-i18n="langs.source">Idioma de lectura</h3>
+        <div class="langs__row" id="langs-source"></div>
+      </section>
+      <section class="langs__group">
+        <h3 data-i18n="langs.target">Idioma al que traducir</h3>
+        <div class="langs__row" id="langs-target"></div>
+        <p class="langs__note" id="langs-note" hidden></p>
+      </section>
+    </div>
+    <footer class="modal__foot modal__foot--actions">
+      <span class="langs__preview" id="langs-preview"></span>
+      <button class="btn btn--primary btn--lg" id="langs-ok" data-i18n="langs.ok">Empezar</button>
+    </footer>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+<div class="dropzone" id="dropzone" hidden><p data-i18n="drop">Suelta el fichero para abrirlo</p></div>
+
+<script src="vendor/pdf.min.js"></script>
+<script src="vendor/jszip.min.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/dictionary.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/langs.js"></script>
+<script src="js/vocab.js"></script>
+<script src="js/epub.js"></script>
+<script src="js/textdoc.js"></script>
+<script src="js/viewer.js"></script>
+<script src="js/popup.js"></script>
+<script src="js/beginners.js"></script>
+<script src="js/catalog.js"></script>
+<script src="js/library.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

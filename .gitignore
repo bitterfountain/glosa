@@ -1,0 +1,7 @@
+graphify-out/
+.env
+# Fuentes de los diccionarios (cientos de MB): se descargan con las URL del README
+tools/*.tei
+tools/*.gz
+tools/*.xz
+tools/*/
