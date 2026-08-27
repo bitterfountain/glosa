@@ -14,9 +14,18 @@ window.Library = (function () {
   let onOpen = null;
 
   // ---------------------------------------------------------------- índice (localStorage)
+  // Varias pestañas comparten el índice: antes de escribir se RELEE de localStorage y se cambia solo el
+  // registro afectado, para que una pestaña vieja no pise lo que las demás han guardado.
+  let lastRaw = null;
+  // Devuelve true si el índice guardado cambió desde la última lectura.
   function load() {
-    try { items = JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (_) { items = []; }
+    let raw = "[]";
+    try { raw = localStorage.getItem(KEY) || "[]"; } catch (_) { /* sin almacenamiento */ }
+    const changed = raw !== lastRaw;
+    lastRaw = raw;
+    try { items = JSON.parse(raw); } catch (_) { items = []; }
     if (!Array.isArray(items)) items = [];
+    return changed;
   }
 
   // Guarda el índice. Si localStorage está lleno, descarta los libros leídos hace
@@ -24,7 +33,8 @@ window.Library = (function () {
   function persist() {
     for (let attempt = 0; attempt < 50; attempt++) {
       try {
-        localStorage.setItem(KEY, JSON.stringify(items));
+        lastRaw = JSON.stringify(items);
+        localStorage.setItem(KEY, lastRaw);
         return;
       } catch (err) {
         if (items.length <= 1) { console.warn("Biblioteca: no se pudo guardar el índice", err); return; }
@@ -84,6 +94,7 @@ window.Library = (function () {
   // ---------------------------------------------------------------- API
   // Registra (o actualiza) un libro recién abierto. El fichero se guarda la primera vez.
   async function add(file, meta) {
+    load();
     const id = idFor(file);
     let rec = find(id);
     if (!rec) {
@@ -101,19 +112,28 @@ window.Library = (function () {
   }
 
   // Posición de lectura: unidad (página o capítulo) y, dentro de ella, bloque y fracción ({block, offset}).
+  // Devuelve la marca de tiempo del guardado (posAt) si cambió algo, o 0 si ya estaba igual.
   function updatePosition(id, page, pos) {
+    load();
     const rec = find(id);
-    if (!rec) return;
+    if (!rec) return 0;
     const prev = rec.pos || { block: -1, offset: 0 };
     const next = pos ? { block: pos.block, offset: pos.offset } : prev;
-    if (rec.page === page && prev.block === next.block && prev.offset === next.offset) return;
+    if (rec.page === page && prev.block === next.block && prev.offset === next.offset) return 0;
     rec.page = page;
     rec.pos = next;
-    rec.lastOpened = Date.now();
+    rec.lastOpened = rec.posAt = Date.now();
     persist();
+    return rec.posAt;
+  }
+
+  // Relee el índice de localStorage (otra pestaña puede haberlo cambiado) y repinta la estantería.
+  function reload() {
+    if (load()) render();
   }
 
   function setCover(id, dataUrl) {
+    load();
     const rec = find(id);
     if (!rec || !dataUrl || rec.cover === dataUrl) return;
     rec.cover = dataUrl;
@@ -122,6 +142,7 @@ window.Library = (function () {
   }
 
   async function remove(id) {
+    load();
     items = items.filter((i) => i.id !== id);
     persist();
     await deleteFile(id);
@@ -213,6 +234,8 @@ window.Library = (function () {
   function init(opts) {
     onOpen = opts && opts.onOpen;
     load();
+    // Cambios hechos desde otra pestaña: la estantería se pone al día sola.
+    window.addEventListener("storage", (e) => { if (e.key === KEY) reload(); });
     $("btn-library").addEventListener("click", () => (isOpen() ? closeModal() : showModal()));
     $("btn-continue").addEventListener("click", showModal);
     document.querySelectorAll("[data-close-library]").forEach((el) => el.addEventListener("click", closeModal));
@@ -220,5 +243,5 @@ window.Library = (function () {
     render();
   }
 
-  return { init, add, find, updatePosition, setCover, remove, fileFor, render, idFor, showModal, closeModal };
+  return { init, add, find, updatePosition, reload, setCover, remove, fileFor, render, idFor, showModal, closeModal };
 })();

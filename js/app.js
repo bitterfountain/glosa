@@ -7,6 +7,9 @@ window.App = (function () {
   const SUPPORTED = /\.(pdf|epub|html?|xhtml|txt)$/i;
   let toastTimer = 0;
   let positionKey = null;
+  let lastSavedAt = 0;   // posAt del último guardado hecho desde ESTA pestaña (o cargado al abrir)
+  let lastScrollAt = 0;  // para no saltar mientras el lector se está desplazando aquí
+  const TAB_SYNC_MS = 3000;
 
   function toast(msg, ms) {
     const el = $("toast");
@@ -114,6 +117,7 @@ window.App = (function () {
   async function onBookReady(info, file) {
     positionKey = Library.idFor(file);
     const rec = await Library.add(file, { title: info.name, author: Viewer.author, docType: Viewer.docType, pages: info.pages });
+    lastSavedAt = rec.posAt || 0;
     const pos = rec.pos || null;
     const hasProgress = rec.page > 1 || (pos && (pos.block > 0 || pos.offset > 0));
     if (hasProgress && rec.page <= info.pages) {
@@ -149,6 +153,7 @@ window.App = (function () {
   const POSITION_SAVE_DELAY = 400;
   let positionTimer = 0;
   function schedulePositionSave() {
+    lastScrollAt = Date.now();
     if (!positionKey) return;
     clearTimeout(positionTimer);
     positionTimer = setTimeout(flushPosition, POSITION_SAVE_DELAY);
@@ -158,8 +163,25 @@ window.App = (function () {
     positionTimer = 0;
     if (!positionKey || !Viewer.loaded) return;
     const pos = Viewer.position();
-    Library.updatePosition(positionKey, pos.page, { block: pos.block, offset: pos.offset });
+    const at = Library.updatePosition(positionKey, pos.page, { block: pos.block, offset: pos.offset });
+    if (at) lastSavedAt = at;
     Viewer.markPosition();
+  }
+
+  // Al volver a esta pestaña: si otra guardó el libro más adelante (o más atrás), se salta a ese punto.
+  // Solo si el guardado es posterior al último de esta pestaña; así una pestaña vieja no se lleva a la nueva.
+  function syncFromOtherTabs() {
+    if (!positionKey || !Viewer.loaded) return;
+    Library.reload();
+    const rec = Library.find(positionKey);
+    if (!rec || !rec.posAt || rec.posAt <= lastSavedAt) return;
+    lastSavedAt = rec.posAt;
+    const cur = Viewer.position();
+    const pos = rec.pos || null;
+    const same = cur.page === rec.page && pos && cur.block === pos.block && Math.abs(cur.offset - pos.offset) < 0.02;
+    if (same) return;
+    resumeAt(rec.page, pos);
+    toast(t("toast.syncedTab", { n: rec.page }), 3500);
   }
 
   // Volver a la portada: guarda la posición, cierra el libro y enseña la pantalla de inicio.
@@ -272,7 +294,11 @@ window.App = (function () {
     Dictionary.onChange(() => applyChineseSimplified());
     Viewer.on("scroll", schedulePositionSave);
     window.addEventListener("pagehide", flushPosition);
-    document.addEventListener("visibilitychange", () => { if (document.hidden) flushPosition(); });
+    document.addEventListener("visibilitychange", () => { if (document.hidden) flushPosition(); else syncFromOtherTabs(); });
+    window.addEventListener("focus", syncFromOtherTabs);
+    // Red extra (dos ventanas a la vez, navegadores que no avisan al cambiar de pestaña): cada pocos
+    // segundos, si esta pestaña está visible y quieta, se mira si otra guardó una posición más nueva.
+    setInterval(() => { if (!document.hidden && Date.now() - lastScrollAt > TAB_SYNC_MS) syncFromOtherTabs(); }, TAB_SYNC_MS);
 
     // Menú hamburguesa (móvil): se cierra al elegir una acción o al tocar fuera.
     $("btn-menu").addEventListener("click", () => setMenu(!document.body.classList.contains("menu-open")));
