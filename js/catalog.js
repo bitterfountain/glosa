@@ -413,9 +413,27 @@ window.Catalog = (function () {
     });
   }
 
+  // Pestañas de idioma del modal: solo banderas (el nombre va en el tooltip), que ocupan menos.
+  function renderLangTabs() {
+    const seg = $("catalog-lang");
+    seg.replaceChildren();
+    Object.keys(SOURCES).forEach((l) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "segmented__btn segmented__btn--flag";
+      b.dataset.lang = l;
+      b.setAttribute("role", "tab");
+      b.title = Langs.NAMES[l] || l;
+      b.setAttribute("aria-label", Langs.NAMES[l] || l);
+      b.append(Langs.flag(l));
+      seg.appendChild(b);
+    });
+  }
+
   function init() {
     renderBeginnersRow();
     renderToolbarRow();
+    renderLangTabs();
     $("catalog-level").addEventListener("click", (e) => {
       const b = e.target.closest("[data-level]");
       if (!b) return;

@@ -594,3 +594,8 @@ body[data-src="zh"] .popup__word h3 { font-family: "Microsoft YaHei", "PingFang 
   .toolbar__right .btn--icon { width: 46px; height: 46px; }
   .toolbar__right .btn--icon svg { width: 24px; height: 24px; }
 }
+
+/* ---------------------------------------------------------------- pestañas de idioma del catálogo: solo banderas */
+.segmented--flags .segmented__btn--flag { padding: 4px 8px; display: inline-flex; align-items: center; }
+.segmented--flags .segmented__btn--flag .flag { width: 26px; height: 17px; opacity: .6; }
+.segmented--flags .segmented__btn--flag.is-active .flag { opacity: 1; }
