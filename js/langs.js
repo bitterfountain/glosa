@@ -124,6 +124,7 @@ window.Langs = (function () {
       if (srcSel === dstSel) srcSel = sources().find((s) => s !== dstSel) || srcSel;
     }
     renderPicker();
+    if (window.Popup) Popup.hide();
     $("langs-modal").hidden = false;
     $("langs-ok").focus();
   }

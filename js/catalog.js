@@ -24,14 +24,15 @@ window.Catalog = (function () {
   };
   const wsApiUrl = (l) => "https://" + l + ".wikisource.org/w/api.php";
   const WS_MAX_CHAPTERS = 60;
+  const WS_MAX_HTML = 1500000;    // caracteres de HTML: por encima, el DOM deja el navegador clavado
   const WS_INDEX_MAX_TEXT = 8000; // por debajo de este texto (o de 600 caracteres por enlace) la página es un índice
   const WORKS_AR = [
     ["كليلة ودمنة", "ابن المقفع"], ["ألف ليلة وليلة", ""], ["حي بن يقظان", "ابن طفيل"], ["البخلاء", "الجاحظ"],
     ["طوق الحمامة", "ابن حزم"], ["مقامات الحريري", "الحريري"], ["رسالة الغفران", "أبو العلاء المعري"],
     ["رحلة ابن جبير", "ابن جبير"], ["العقد الفريد", "ابن عبد ربه"], ["أخبار الحمقى والمغفلين", "ابن الجوزي"],
     ["تهافت الفلاسفة", "الغزالي"], ["قصص الأنبياء لابن كثير", "ابن كثير"], ["الفهرست", "ابن النديم"],
-    ["البيان والتبيين", "الجاحظ"], ["لامية العرب", "الشنفرى"], ["تاريخ الطبري", "الطبري"],
-  ];
+    ["لامية العرب", "الشنفرى"],
+  ]; // fuera البيان والتبيين (800.000 caracteres en una página) y تاريخ الطبري (11 tomos): dejan el navegador clavado
 
   const $ = (id) => document.getElementById(id);
   const t = (k, v) => I18n.t(k, v);
@@ -161,8 +162,10 @@ window.Catalog = (function () {
     const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
     const parts = new Array(level1.length).fill("");
     let next = 0;
+    let size = main.innerHTML.length;
     const worker = async () => {
       while (next < level1.length) {
+        if (size > WS_MAX_HTML) break; // ya hay lectura de sobra; el resto quedaría fuera del tope
         const i = next++;
         const ch = level1[i];
         try {
@@ -178,6 +181,7 @@ window.Catalog = (function () {
             }
           }
           parts[i] = html;
+          size += html.length;
         } catch (_) { parts[i] = ""; }
       }
     };
@@ -336,6 +340,7 @@ window.Catalog = (function () {
   async function show(l, opts) {
     lang = l || lang;
     levelOnly = !!(opts && opts.beginners);
+    if (window.Popup) Popup.hide();
     const modal = $("catalog-modal");
     modal.hidden = false;
     syncHeader();
@@ -391,8 +396,26 @@ window.Catalog = (function () {
     row.parentElement.hidden = row.childElementCount === 0;
   }
 
+  // Menú móvil: una bandera por idioma con catálogo (abre su Top 100; el modal permite cambiar de idioma).
+  function renderToolbarRow() {
+    const row = $("toolbar-catalogs-row");
+    if (!row) return;
+    row.replaceChildren();
+    Object.keys(SOURCES).forEach((l) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "btn btn--icon btn--flag";
+      b.title = t("catalog.title." + l);
+      b.setAttribute("aria-label", t("catalog.title." + l));
+      b.append(Langs.flag(l));
+      b.addEventListener("click", () => show(l));
+      row.appendChild(b);
+    });
+  }
+
   function init() {
     renderBeginnersRow();
+    renderToolbarRow();
     $("catalog-level").addEventListener("click", (e) => {
       const b = e.target.closest("[data-level]");
       if (!b) return;

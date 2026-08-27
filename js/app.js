@@ -162,6 +162,20 @@ window.App = (function () {
     Viewer.markPosition();
   }
 
+  // Volver a la portada: guarda la posición, cierra el libro y enseña la pantalla de inicio.
+  async function goHome() {
+    if (!Viewer.loaded) { setMenu(false); return; }
+    flushPosition();
+    positionKey = null;
+    Popup.hide();
+    closeDrawers();
+    setMenu(false);
+    await Viewer.close();
+    document.title = t("app.title");
+    updateTitleBar();
+    Library.render();
+  }
+
   // Reabrir un libro de la biblioteca (el fichero vive en IndexedDB).
   async function openFromLibrary(rec) {
     Library.closeModal();
@@ -176,6 +190,7 @@ window.App = (function () {
 
   // ---------------------------------------------------------------- menú móvil y título
   function setMenu(open) {
+    if (open) Popup.hide();
     document.body.classList.toggle("menu-open", open);
     $("btn-menu").setAttribute("aria-expanded", open ? "true" : "false");
   }
@@ -192,6 +207,7 @@ window.App = (function () {
   function toggleDrawer(id) {
     const el = $(id);
     const open = el.hidden;
+    Popup.hide();
     document.querySelectorAll(".drawer").forEach((d) => { d.hidden = true; });
     el.hidden = !open;
     window.dispatchEvent(new Event("resize"));
@@ -206,6 +222,14 @@ window.App = (function () {
   function bind() {
     const fileInput = $("file-input");
     $("btn-open").addEventListener("click", () => fileInput.click());
+    $("btn-home").addEventListener("click", goHome);
+    $("brand-home").addEventListener("click", goHome);
+    $("btn-catalog").addEventListener("click", () => {
+      const p = Dictionary.PAIRS.find((x) => x.id === Settings.get("pair"));
+      closeDrawers();
+      setMenu(false);
+      Catalog.show(p ? p.src : "en");
+    });
     $("btn-open-empty").addEventListener("click", () => fileInput.click());
     fileInput.addEventListener("change", () => { openFile(fileInput.files[0]); fileInput.value = ""; });
 

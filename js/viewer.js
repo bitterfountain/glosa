@@ -54,6 +54,20 @@ window.Viewer = (function () {
     return info;
   }
 
+  // Cierra el libro abierto y vuelve a mostrar la portada.
+  async function close() {
+    await closeCurrent();
+    pageSlots = [];
+    pdf = null; book = null; fileName = "";
+    currentPage = 1;
+    heightsReady = false; pendingTarget = null; pendingPos = null;
+    hideMarker();
+    $("empty-state").hidden = false;
+    pagesEl().hidden = true;
+    $("nav-controls").hidden = true;
+    delete document.body.dataset.doctype;
+  }
+
   // Miniatura de portada (data URL JPEG) para la biblioteca: portada del EPUB o 1.ª página del PDF.
   async function coverThumb() {
     const W = 92, H = 132;
@@ -551,7 +565,7 @@ window.Viewer = (function () {
   }
 
   return {
-    init, open, on, goTo, setZoom, zoomIn, zoomOut, setMode, sampleText, coverThumb, position, markPosition, transformText,
+    init, open, close, on, goTo, setZoom, zoomIn, zoomOut, setMode, sampleText, coverThumb, position, markPosition, transformText,
     get page() { return currentPage; },
     get author() { return book ? book.author || "" : ""; },
     get pages() { return count(); },

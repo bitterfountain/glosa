@@ -567,3 +567,30 @@ body[data-src="zh"] .popup__word h3 { font-family: "Microsoft YaHei", "PingFang 
 .btn--beg { gap: 8px; }
 .btn--beg .flag { width: 22px; height: 15px; }
 .empty__catalogs--beg { margin-top: 16px; padding-top: 16px; }
+
+/* ---------------------------------------------------------------- catálogos en el menú móvil */
+.toolbar__catalogs { display: none; }
+.toolbar__catalogs-label { font-size: 12px; font-weight: 600; color: var(--fg-muted); text-transform: uppercase; letter-spacing: .06em; }
+.toolbar__catalogs-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn--flag { width: 44px; }
+.btn--flag .flag { width: 24px; height: 16px; }
+@media (max-width: 980px) {
+  .toolbar__catalogs { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+}
+
+/* ---------------------------------------------------------------- volver a inicio */
+.brand { display: inline-flex; align-items: center; gap: inherit; padding: 0; border: 0; background: none; cursor: pointer; color: inherit; font: inherit; }
+.brand:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+.toolbar__home { display: none; }
+@media (max-width: 980px) {
+  body[data-doctype] .toolbar__home { display: inline-flex; }
+}
+
+/* ---------------------------------------------------------------- iconos de la derecha, más grandes */
+.toolbar__right .btn--icon { width: 42px; height: 42px; }
+.toolbar__right .btn--icon svg { width: 22px; height: 22px; }
+.toolbar__right .badge { top: 4px; right: 4px; }
+@media (max-width: 980px) {
+  .toolbar__right .btn--icon { width: 46px; height: 46px; }
+  .toolbar__right .btn--icon svg { width: 24px; height: 24px; }
+}
