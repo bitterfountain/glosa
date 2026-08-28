@@ -4,7 +4,7 @@ window.I18n = (function () {
 
   const STRINGS = {
     es: {
-      "app.title": "Glosa Book Reader · lector de libros con diccionario",
+      "app.title": "Glosa Book Reader",
       "open": "Abrir libro", "open.title": "Abrir un libro: PDF, EPUB, HTML o TXT (O)", "home": "Inicio",
       "prev": "Anterior (←)", "next": "Siguiente (→)", "zoom.out": "Reducir (-)", "zoom.in": "Ampliar (+)", "zoom.fit": "Ajustar al ancho",
       "mode.page": "Página", "mode.page.title": "Vista de página original", "mode.text": "Texto", "mode.text.title": "Texto reflujable con tu fuente y tamaño",
@@ -69,7 +69,7 @@ window.I18n = (function () {
       "lib.continue": "Seguir leyendo", "lib.notStored": "fichero no guardado", "lib.reselect": "El fichero de «{title}» no está guardado en este navegador: elígelo de nuevo.",
     },
     en: {
-      "app.title": "Glosa Book Reader · read in another language with a dictionary",
+      "app.title": "Glosa Book Reader",
       "open": "Open book", "open.title": "Open a book: PDF, EPUB, HTML or TXT (O)", "home": "Home",
       "prev": "Previous (←)", "next": "Next (→)", "zoom.out": "Zoom out (-)", "zoom.in": "Zoom in (+)", "zoom.fit": "Fit width",
       "mode.page": "Page", "mode.page.title": "Original page view", "mode.text": "Text", "mode.text.title": "Reflowable text with your font and size",
@@ -134,7 +134,7 @@ window.I18n = (function () {
       "lib.continue": "Continue reading", "lib.notStored": "file not stored", "lib.reselect": "The file for “{title}” is not stored in this browser: please pick it again.",
     },
     it: {
-      "app.title": "Glosa Book Reader · lettore di libri con dizionario",
+      "app.title": "Glosa Book Reader",
       "open": "Apri libro", "open.title": "Apri un libro: PDF, EPUB, HTML o TXT (O)", "home": "Inizio",
       "prev": "Precedente (←)", "next": "Successivo (→)", "zoom.out": "Riduci (-)", "zoom.in": "Ingrandisci (+)", "zoom.fit": "Adatta alla larghezza",
       "mode.page": "Pagina", "mode.page.title": "Vista della pagina originale", "mode.text": "Testo", "mode.text.title": "Testo adattabile con il tuo carattere e la tua dimensione",
@@ -199,7 +199,7 @@ window.I18n = (function () {
       "lib.continue": "Continua a leggere", "lib.notStored": "file non salvato", "lib.reselect": "Il file di «{title}» non è salvato in questo browser: selezionalo di nuovo.",
     },
     de: {
-      "app.title": "Glosa Book Reader · Buchleser mit Wörterbuch",
+      "app.title": "Glosa Book Reader",
       "open": "Buch öffnen", "open.title": "Ein Buch öffnen: PDF, EPUB, HTML oder TXT (O)", "home": "Start",
       "prev": "Zurück (←)", "next": "Weiter (→)", "zoom.out": "Verkleinern (-)", "zoom.in": "Vergrößern (+)", "zoom.fit": "An Breite anpassen",
       "mode.page": "Seite", "mode.page.title": "Originalseitenansicht", "mode.text": "Text", "mode.text.title": "Fließtext mit deiner Schrift und Größe",
