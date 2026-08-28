@@ -1,5 +1,5 @@
 {
-  "name": "Glosa · lector de libros con diccionario",
+  "name": "Glosa Book Reader",
   "short_name": "Glosa",
   "description": "Lee en otro idioma: pulsa una palabra y verás su traducción.",
   "start_url": "./",
