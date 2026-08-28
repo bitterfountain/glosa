@@ -399,8 +399,9 @@ window.Catalog = (function () {
     const row = $("beginners-row");
     if (!row) return;
     row.replaceChildren();
-    Object.keys(window.BEGINNERS || {}).forEach((l) => {
-      if (!window.BEGINNERS[l].length) return;
+    // En el mismo orden que los botones del Top 100 (el de SOURCES), para que las dos filas coincidan.
+    Object.keys(SOURCES).forEach((l) => {
+      if (!window.BEGINNERS || !window.BEGINNERS[l] || !window.BEGINNERS[l].length) return;
       const b = document.createElement("button");
       b.type = "button";
       b.className = "btn btn--catalog btn--beg";
