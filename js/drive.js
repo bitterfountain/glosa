@@ -19,6 +19,7 @@ window.Drive = (function () {
   let pickerPromise = null;
 
   function available() { return Auth.available() && !!Auth.meta("google-api-key"); }
+  function isNarrow() { return Math.min(window.innerWidth, window.innerHeight) < 600; }
 
   // ---------------------------------------------------------------- token de acceso (en memoria)
   // Popup de Google la primera vez (consentimiento); después, si el lector ya lo concedió, Google lo
@@ -81,6 +82,9 @@ window.Drive = (function () {
         });
       const appId = Auth.meta("google-app-id");
       if (appId) b.setAppId(appId);
+      // El selector no es adaptable: tiene un mínimo de 566×350 y en pantallas estrechas se escala
+      // entero para caber. Pidiendo el tamaño mínimo y sin barra lateral, el escalado es la mitad de agresivo.
+      if (isNarrow()) b.setSize(566, 350).enableFeature(google.picker.Feature.NAV_HIDDEN);
       b.build().setVisible(true);
     });
   }
@@ -103,6 +107,8 @@ window.Drive = (function () {
   // Botón "Abrir de Google Drive": elegir, bajar y abrir.
   async function open() {
     if (!available()) return;
+    // En el móvil el selector del sistema ("Abrir libro") ya incluye Google Drive y se maneja mejor.
+    if (isNarrow()) App.toast(t("drive.mobileHint"), 6000);
     let doc = null;
     try {
       doc = await pick();
