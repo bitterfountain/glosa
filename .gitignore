@@ -5,3 +5,6 @@ tools/*.tei
 tools/*.gz
 tools/*.xz
 tools/*/
+# credenciales descargadas de Google Cloud: nunca en el repo
+client_secret*.json
+*.apps.googleusercontent.com.json
