@@ -88,7 +88,8 @@ window.App = (function () {
   }
 
   // ---------------------------------------------------------------- abrir libro
-  async function openFile(file) {
+  // source: origen del libro ({ kind, ref }, ver js/library.js); sin él, fichero local.
+  async function openFile(file, source) {
     if (!file) return;
     if (!SUPPORTED.test(file.name) && file.type !== "application/pdf") { toast(t("toast.unsupported")); return; }
     Popup.hide();
@@ -103,7 +104,7 @@ window.App = (function () {
       $("page-input").max = String(info.pages);
       setMenu(false);
       updateTitleBar();
-      onBookReady(info, file);
+      onBookReady(info, file, source);
       applyChineseSimplified();
       detectAndSwitch();
     } catch (err) {
@@ -114,9 +115,9 @@ window.App = (function () {
 
   // Al abrir un libro: se registra en la biblioteca y se vuelve al punto exacto donde se dejó
   // (unidad + bloque + fracción; los libros guardados antes solo traen la unidad).
-  async function onBookReady(info, file) {
-    positionKey = Library.idFor(file);
-    const rec = await Library.add(file, { title: info.name, author: Viewer.author, docType: Viewer.docType, pages: info.pages });
+  async function onBookReady(info, file, source) {
+    const rec = await Library.add(file, { title: info.name, author: Viewer.author, docType: Viewer.docType, pages: info.pages, source });
+    positionKey = rec.id;
     lastSavedAt = rec.posAt || 0;
     const pos = rec.pos || null;
     const hasProgress = rec.page > 1 || (pos && (pos.block > 0 || pos.offset > 0));
@@ -198,16 +199,37 @@ window.App = (function () {
     Library.render();
   }
 
-  // Reabrir un libro de la biblioteca (el fichero vive en IndexedDB).
+  // Reabrir un libro de la biblioteca: el fichero vive en IndexedDB; si no está (otro dispositivo,
+  // datos borrados), los de un origen remoto se vuelven a descargar y los locales se piden al lector.
   async function openFromLibrary(rec) {
     Library.closeModal();
-    const file = await Library.fileFor(rec);
+    let file = await Library.fileFor(rec);
+    const source = rec.source || { kind: "local", ref: "" };
+    if (!file && source.kind !== "local") {
+      toast(t("catalog.downloading", { title: rec.title }), 6000);
+      try {
+        file = await fetchFromSource(source, rec);
+      } catch (err) {
+        console.error(err);
+        toast(t("catalog.openError", { title: rec.title }), 4000);
+        return;
+      }
+    }
     if (!file) {
       toast(t("lib.reselect", { title: rec.title }), 5000);
       $("file-input").click();
       return;
     }
-    await openFile(file);
+    await openFile(file, source);
+  }
+
+  // Descarga un libro de su origen remoto (Gutenberg/Wikisource vía el catálogo, Drive vía js/drive.js).
+  function fetchFromSource(source, rec) {
+    if (source.kind === "drive") {
+      if (!window.Drive) throw new Error("Drive no disponible");
+      return Drive.fetchFile(source.ref, rec.name);
+    }
+    return Catalog.fetchBook(source, rec);
   }
 
   // ---------------------------------------------------------------- menú móvil y título
@@ -347,14 +369,18 @@ window.App = (function () {
     Viewer.init();
     Popup.init();
     Catalog.init();
-    Library.init({ onOpen: openFromLibrary });
+    Library.init({ onOpen: openFromLibrary, onChange: (ev, rec) => { if (window.Sync) Sync.onLibraryChange(ev, rec); } });
     Langs.init();
     bind();
+    // Después de bind(): así, al cerrar la pestaña, la posición se guarda antes de que Sync la envíe.
+    Sync.init();
+    Drive.init();
+    Auth.init();
     { const p = Dictionary.PAIRS.find((x) => x.id === Settings.get("pair")); document.body.dataset.dst = p ? p.dst : ""; document.body.dataset.src = p ? p.src : ""; }
     await usePair(Settings.get("pair"));
     if (!Settings.get("langsChosen")) Langs.show({ firstRun: true });
   }
 
   document.addEventListener("DOMContentLoaded", init);
-  return { toast, openFile };
+  return { toast, openFile, syncPosition: syncFromOtherTabs };
 })();

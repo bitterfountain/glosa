@@ -105,6 +105,37 @@ registro se omite en silencio).
 Un PDF escaneado sin capa de texto (OCR) no tiene palabras que pulsar: la
 vista Texto avisa de ello por página.
 
+## Cuenta opcional (Google) y Google Drive
+
+Sin cuenta, Glosa funciona como siempre. Con «Iniciar sesión con Google» (icono de la barra):
+
+- La **biblioteca se sincroniza** entre dispositivos: qué libros has abierto, de dónde
+  (Gutenberg, Wikisource, Drive o fichero local) y el punto exacto por el que ibas. Los
+  libros no se suben nunca: en otro dispositivo, los de Gutenberg/Wikisource/Drive se
+  vuelven a descargar al abrirlos; los ficheros locales hay que volver a elegirlos.
+  Conflictos: gana la posición más reciente, igual que entre pestañas.
+- **Abrir de Google Drive**: selector de Google con permiso `drive.file` (solo los
+  ficheros que eliges; Glosa no ve el resto de tu Drive). El fichero se descarga
+  directamente de Google al navegador.
+
+Módulos: `js/auth.js` (sesión), `js/sync.js` (sincronización), `js/drive.js` (Drive).
+Servidor: `api.php` (rutas en su cabecera) sobre `usuarios-lib.php`, con su propia SQLite
+(`glosa-usuarios.sqlite`) en la carpeta de datos `GLOSA_DATA_DIR`. Tests:
+`php tools/test-usuarios.php`.
+
+Configuración (en `glosa.env` de la carpeta de datos, o en un `.env` junto a `index.php`;
+`index.php` las inyecta como `<meta>` y sin ellas no aparece el inicio de sesión):
+
+```
+GOOGLE_CLIENT_ID=…apps.googleusercontent.com   # cliente OAuth «Aplicación web»
+GOOGLE_API_KEY=AIza…                           # clave de API restringida a Google Picker API
+GOOGLE_APP_ID=123456789012                     # número del proyecto (para que el selector autorice los ficheros elegidos)
+```
+
+En Google Cloud: Drive API y Google Picker API habilitadas; scopes `openid`, `email`,
+`profile` y `drive.file` (no sensibles, sin verificación); orígenes JavaScript
+autorizados con el dominio de la app (y `http://localhost:8080` para desarrollo).
+
 ## Diccionarios
 
 Se cargan bajo demanda (solo el par activo) desde `dict/`, 12 pares (4 × 3):

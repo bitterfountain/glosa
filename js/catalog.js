@@ -237,27 +237,44 @@ window.Catalog = (function () {
     return noimages ? paths.reverse() : paths; // algunas ediciones ilustradas pesan 25 MB; sin imágenes, 200 KB
   };
 
+  // Origen de un libro del catálogo, tal como lo guarda la biblioteca (ver js/library.js).
+  function sourceOf(book) {
+    return book.ws ? { kind: "wikisource", ref: book.wsLang + ":" + book.title } : { kind: "gutenberg", ref: String(book.id) };
+  }
+
+  // Descarga el fichero de un libro de Gutenberg o Wikisource. Lo usa el catálogo al pulsar un libro y
+  // la biblioteca cuando el fichero ya no está en este navegador (rec: registro de la biblioteca, para el
+  // nombre y el autor).
+  async function fetchBook(source, rec) {
+    if (source.kind === "wikisource") {
+      const i = source.ref.indexOf(":");
+      const l = source.ref.slice(0, i);
+      const title = source.ref.slice(i + 1);
+      return wsBook({ wsLang: l, title, author: rec && rec.author ? rec.author : "" });
+    }
+    if (source.kind !== "gutenberg") throw new Error("origen desconocido: " + source.kind);
+    if (!/^https?:$/.test(location.protocol)) throw new Error(t("catalog.needsServer"));
+    const noimages = !!(rec && rec.noimages);
+    let blob = null;
+    for (const p of EPUB_PATHS(source.ref, noimages)) {
+      const r = await fetch(proxyUrl(p));
+      if (r.ok) { blob = await r.blob(); break; }
+    }
+    if (!blob) throw new Error("EPUB no disponible");
+    const name = rec && rec.name && !rec.name.startsWith("pg") ? rec.name.replace(/\.epub$/i, "") : ((rec && rec.author ? rec.author + " - " : "") + (rec && rec.title ? rec.title : "pg" + source.ref));
+    return new File([blob], name.replace(/[\\/:*?"<>|]+/g, " ").slice(0, 120) + ".epub", { type: "application/epub+zip" });
+  }
+
   async function openBook(book, card) {
     if (opening) return;
     opening = book.id;
     if (card) card.classList.add("is-loading");
     App.toast(t("catalog.downloading", { title: book.title }), 6000);
     try {
-      let file = null;
-      if (book.ws) {
-        file = await wsBook(book);
-      } else {
-        let blob = null;
-        for (const p of EPUB_PATHS(book.id, book.noimages)) {
-          const r = await fetch(proxyUrl(p));
-          if (r.ok) { blob = await r.blob(); break; }
-        }
-        if (!blob) throw new Error("EPUB no disponible");
-        const name = (book.author ? book.author + " - " : "") + book.title;
-        file = new File([blob], name.replace(/[\\/:*?"<>|]+/g, " ").slice(0, 120) + ".epub", { type: "application/epub+zip" });
-      }
+      const source = sourceOf(book);
+      const file = await fetchBook(source, { title: book.title, author: book.author, noimages: book.noimages });
       close();
-      await App.openFile(file);
+      await App.openFile(file, source);
     } catch (err) {
       console.error(err);
       App.toast(t("catalog.openError", { title: book.title }), 4000);
@@ -451,5 +468,5 @@ window.Catalog = (function () {
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && isOpen()) { close(); e.stopPropagation(); } }, true);
   }
 
-  return { init, show, close, isOpen };
+  return { init, show, close, isOpen, fetchBook };
 })();

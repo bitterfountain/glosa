@@ -38,6 +38,10 @@
       <svg viewBox="0 0 20 20"><path d="M3 5.5A1.5 1.5 0 0 1 4.5 4h3.6l1.6 1.8h5.8A1.5 1.5 0 0 1 17 7.3v7.2a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 14.5z"/></svg>
       <span data-i18n="open">Abrir libro</span>
     </button>
+    <button class="btn btn--secondary" id="btn-drive" data-open-drive data-needs-drive data-i18n-title="drive.open" hidden>
+      <svg viewBox="0 0 20 20"><path d="M6 15.5a3.5 3.5 0 0 1-.4-7 5 5 0 0 1 9.6 1.2 3 3 0 0 1-.7 5.8z"/></svg>
+      <span data-i18n="source.drive">Google Drive</span>
+    </button>
     <button class="btn btn--secondary toolbar__home" id="btn-home" data-i18n-title="home">
       <svg viewBox="0 0 20 20"><path d="M3 9.5 10 3l7 6.5M5 8.5V17h4v-4h2v4h4V8.5"/></svg>
       <span data-i18n="home">Inicio</span>
@@ -89,6 +93,10 @@
       <svg viewBox="0 0 20 20"><path d="M5 3.5h10a1 1 0 0 1 1 1v12l-6-3-6 3v-12a1 1 0 0 1 1-1z"/></svg>
       <span class="badge" id="vocab-count" hidden>0</span>
     </button>
+    <button class="btn btn--icon btn--account" id="btn-account" data-i18n-title="account.title" hidden>
+      <svg viewBox="0 0 20 20"><circle cx="10" cy="7" r="3.5"/><path d="M3.5 17a6.5 6.5 0 0 1 13 0"/></svg>
+      <img class="btn--account__avatar" id="account-avatar" alt="" referrerpolicy="no-referrer" hidden>
+    </button>
     <button class="btn btn--icon" id="btn-settings" data-i18n-title="settings">
       <svg viewBox="0 0 20 20"><path d="M16.6 5.9a3.9 3.9 0 0 1-5 4.7l-6.1 6.1a1.6 1.6 0 0 1-2.2-2.2l6.1-6.1a3.9 3.9 0 0 1 4.7-5l-2.3 2.3 0.6 2.1 2.1 0.6z"/></svg>
     </button>
@@ -105,6 +113,10 @@
         <p data-i18n="empty.p">Abre un libro en PDF, EPUB, HTML o TXT, pulsa cualquier palabra y verás su traducción al instante. Elige la fuente y el tamaño con los que mejor leas.</p>
         <div class="empty__actions">
           <button class="btn btn--primary btn--lg" id="btn-open-empty" data-i18n="empty.open">Abrir un libro</button>
+          <button class="btn btn--lg btn--secondary" id="btn-open-drive" data-open-drive data-needs-drive hidden>
+            <svg viewBox="0 0 20 20"><path d="M6 15.5a3.5 3.5 0 0 1-.4-7 5 5 0 0 1 9.6 1.2 3 3 0 0 1-.7 5.8z"/></svg>
+            <span data-i18n="drive.open">Abrir de Google Drive</span>
+          </button>
           <button class="btn btn--lg btn--secondary" id="btn-continue" hidden>
             <svg viewBox="0 0 20 20"><path d="M3 4.5h4.5v11H3zM7.5 4.5H12v11H7.5zM12.6 5.2l3.9-1 2.6 10.7-3.9 1z"/></svg>
             <span data-i18n="lib.continue">Seguir leyendo</span>
@@ -318,7 +330,7 @@
     <header class="modal__head">
       <div class="modal__titles">
         <h2 id="library-title" data-i18n="lib.title">Biblioteca</h2>
-        <p class="modal__sub" data-i18n="lib.sub">Los libros que has abierto, guardados en este navegador con la página por la que ibas.</p>
+        <p class="modal__sub" id="library-sub" data-i18n="lib.sub">Los libros que has abierto, guardados en este navegador con la página por la que ibas.</p>
       </div>
       <div class="modal__tools">
         <button class="btn btn--icon" data-close-library data-i18n-title="close"><svg viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></svg></button>
@@ -328,7 +340,7 @@
       <p class="drawer__empty" id="library-empty" data-i18n="lib.empty">Todavía no has abierto ningún libro.</p>
       <div class="shelf" id="library-list"></div>
     </div>
-    <footer class="modal__foot"><span id="library-usage"></span><span data-i18n="lib.note">Se guardan solo en este navegador; si borras sus datos, desaparecen.</span></footer>
+    <footer class="modal__foot"><span id="library-usage"></span><span id="library-note" data-i18n="lib.note">Se guardan solo en este navegador; si borras sus datos, desaparecen.</span></footer>
   </div>
 </div>
 
@@ -362,6 +374,38 @@
   </div>
 </div>
 
+<div class="modal" id="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-title" hidden>
+  <div class="modal__backdrop" data-close-account></div>
+  <div class="modal__panel modal__panel--account">
+    <header class="modal__head">
+      <div class="modal__titles">
+        <h2 id="account-title" data-i18n="account.title">Tu cuenta</h2>
+      </div>
+      <div class="modal__tools">
+        <button class="btn btn--icon" data-close-account data-i18n-title="close"><svg viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></svg></button>
+      </div>
+    </header>
+    <div class="modal__body account">
+      <div class="account__state" id="account-out">
+        <p class="account__intro" data-i18n="account.intro">Inicia sesión con Google para que tu biblioteca y el punto de lectura de cada libro te sigan entre dispositivos, y para abrir libros desde tu Google Drive. Los libros no se suben a Glosa: solo la lista y la página por la que vas.</p>
+        <div class="account__gsi" id="gsi-button"></div>
+        <p class="account__legal"><span data-i18n="account.legal">Al iniciar sesión aceptas las condiciones del servicio y la política de privacidad.</span> <a href="conditions/" target="_blank" rel="noopener" data-i18n="legal.terms">Condiciones</a> · <a href="privacy/" target="_blank" rel="noopener" data-i18n="legal.privacy">Privacidad</a></p>
+      </div>
+      <div class="account__state" id="account-in" hidden>
+        <div class="account__who">
+          <img class="account__picture" id="account-picture" alt="" referrerpolicy="no-referrer">
+          <div class="account__id"><b id="account-name"></b><span class="account__email" id="account-email"></span></div>
+        </div>
+        <div class="account__actions">
+          <button class="btn btn--primary" id="btn-account-drive" data-open-drive><svg viewBox="0 0 20 20"><path d="M6 15.5a3.5 3.5 0 0 1-.4-7 5 5 0 0 1 9.6 1.2 3 3 0 0 1-.7 5.8z"/></svg><span data-i18n="drive.open">Abrir de Google Drive</span></button>
+          <button class="btn btn--secondary" id="btn-logout" data-i18n="account.logout">Cerrar sesión</button>
+          <button class="btn btn--text btn--danger" id="btn-delete-account" data-i18n="account.delete">Eliminar cuenta</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast" hidden></div>
 <div class="dropzone" id="dropzone" hidden><p data-i18n="drop">Suelta el fichero para abrirlo</p></div>
 
@@ -379,6 +423,9 @@
 <script src="js/beginners.js"></script>
 <script src="js/catalog.js"></script>
 <script src="js/library.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/sync.js"></script>
+<script src="js/drive.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
