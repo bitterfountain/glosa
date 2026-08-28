@@ -107,8 +107,14 @@ window.Drive = (function () {
   // Botón "Abrir de Google Drive": elegir, bajar y abrir.
   async function open() {
     if (!available()) return;
-    // En el móvil el selector del sistema ("Abrir libro") ya incluye Google Drive y se maneja mejor.
-    if (isNarrow()) App.toast(t("drive.mobileHint"), 6000);
+    // El selector de Google no tiene versión móvil (mínimo 566×350, escalado hasta ser inusable). En
+    // pantallas estrechas se abre el selector del sistema, que en Android e iOS ya incluye Google Drive.
+    if (isNarrow()) {
+      App.toast(t("drive.mobileHint"), 5000);
+      Auth.close();
+      document.getElementById("file-input").click();
+      return;
+    }
     let doc = null;
     try {
       doc = await pick();
