@@ -458,7 +458,12 @@ window.Catalog = (function () {
       syncHeader();
       render();
     });
-    document.querySelectorAll("[data-catalog-lang]").forEach((b) => b.addEventListener("click", () => show(b.dataset.catalogLang)));
+    document.querySelectorAll("[data-catalog-lang]").forEach((b) => {
+      // La misma bandera que la fila infantil, para que las dos filas se lean igual.
+      const icon = b.querySelector("svg");
+      if (icon) icon.replaceWith(Langs.flag(b.dataset.catalogLang));
+      b.addEventListener("click", () => show(b.dataset.catalogLang));
+    });
     document.querySelectorAll("[data-close-catalog]").forEach((el) => el.addEventListener("click", close));
     $("catalog-lang").addEventListener("click", (e) => {
       const b = e.target.closest("[data-lang]");

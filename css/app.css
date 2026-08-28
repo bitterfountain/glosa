@@ -593,7 +593,8 @@ body[data-src="zh"] .popup__word h3 { font-family: "Microsoft YaHei", "PingFang 
 [data-theme="dark"] .book__level--principiante { color: #86efac; }
 [data-theme="dark"] .book__level--intermedio { color: #fcd34d; }
 .btn--beg { gap: 8px; }
-.btn--beg .flag { width: 22px; height: 15px; }
+.btn--beg .flag, .btn--catalog .flag { width: 22px; height: 15px; }
+.btn--catalog { gap: 8px; }
 .empty__catalogs--beg { margin-top: 16px; padding-top: 16px; }
 
 /* ---------------------------------------------------------------- catálogos en el menú móvil */
