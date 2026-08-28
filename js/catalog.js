@@ -381,7 +381,8 @@ window.Catalog = (function () {
       books = withBeginners(await loadList(lang), lang);
       status.hidden = true;
       render();
-      $("catalog-filter").focus();
+      // Solo con teclado físico: en el móvil el foco abriría el teclado en pantalla y taparía la lista.
+      if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) $("catalog-filter").focus();
     } catch (err) {
       console.error(err);
       status.textContent = t("catalog.error");
