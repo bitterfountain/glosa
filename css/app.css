@@ -204,6 +204,9 @@ body { display: flex; flex-direction: column; }
 .empty p { color: var(--fg-muted); margin: 0 0 22px; font-size: 15px; }
 .empty__hint { font-size: 13px !important; color: var(--fg-faint) !important; margin: 14px 0 0 !important; }
 .empty__meta { font-size: 12px !important; color: var(--fg-faint) !important; margin: 18px 0 0 !important; }
+.empty__legal { font-size: 12px !important; color: var(--fg-faint) !important; margin: 6px 0 0 !important; }
+.empty__legal a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.empty__legal a:hover { color: var(--fg-muted); }
 
 .pages { padding: 24px 24px 80px; display: flex; flex-direction: column; align-items: center; gap: 22px; }
 /* Marcador de lectura: línea magenta pegada al contenido, donde se dejó de leer. */
