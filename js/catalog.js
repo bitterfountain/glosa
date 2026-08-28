@@ -17,10 +17,10 @@ window.Catalog = (function () {
     es: Object.assign({ label: "Español" }, search("es")),
     it: Object.assign({ label: "Italiano" }, search("it")),
     de: Object.assign({ label: "Deutsch" }, search("de")),
-    zh: Object.assign({ label: "中文" }, search("zh")),
     // Árabe: Gutenberg no tiene libros en árabe. Clásicos de dominio público de Wikisource, cuya
     // API admite CORS (no hace falta el proxy, funciona incluso desde disco). Ordenados por vistas.
     ar: { label: "العربية", wikisource: true, credit: "https://ar.wikisource.org/" },
+    zh: Object.assign({ label: "中文" }, search("zh")),
   };
   const wsApiUrl = (l) => "https://" + l + ".wikisource.org/w/api.php";
   const WS_MAX_CHAPTERS = 60;
