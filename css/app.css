@@ -92,12 +92,8 @@ h1, h2, h3 { margin: 0; font-weight: 600; }
 .toolbar__title { display: none; }
 .icon-close { display: none; }
 .brand__logo {
-  width: 28px; height: 28px; border-radius: 7px; background: var(--accent);
-  position: relative; flex: none;
-}
-.brand__logo::after {
-  content: ""; position: absolute; left: 8px; top: 6px; width: 12px; height: 15px;
-  background: #fff; border-radius: 2px 6px 6px 2px;
+  width: 28px; height: 28px; border-radius: 7px; flex: none;
+  background: url("../icons/favicon-64.png") center / contain no-repeat;
 }
 .brand__name { font-weight: 700; font-size: 15px; letter-spacing: -.01em; margin-right: 6px; }
 .brand__name span { color: var(--accent); }
@@ -192,14 +188,9 @@ body { display: flex; flex-direction: column; }
   background: var(--bg-elev); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow-md);
 }
 .empty__icon {
-  width: 72px; height: 88px; margin: 0 auto 22px; border-radius: 6px 14px 14px 6px;
-  background: linear-gradient(160deg, var(--accent), #7c3aed); position: relative; box-shadow: var(--shadow-md);
+  width: 104px; height: 104px; margin: 0 auto 22px; border-radius: 22px; box-shadow: var(--shadow-md);
+  background: url("../icons/icon-256.png") center / contain no-repeat;
 }
-.empty__icon::before, .empty__icon::after {
-  content: ""; position: absolute; left: 16px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.85);
-}
-.empty__icon::before { top: 26px; width: 40px; }
-.empty__icon::after { top: 42px; width: 28px; }
 .empty h1 { font-size: 22px; letter-spacing: -.01em; margin-bottom: 10px; }
 .empty p { color: var(--fg-muted); margin: 0 0 22px; font-size: 15px; }
 .empty__hint { font-size: 13px !important; color: var(--fg-faint) !important; margin: 14px 0 0 !important; }
