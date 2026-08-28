@@ -25,6 +25,13 @@ if ($metas !== '') {
     $html = str_replace('</head>', $metas . '</head>', $html);
 }
 
+// Versión en cada script y hoja de estilos locales (?v=<fecha del fichero>): sin ella los navegadores
+// (sobre todo en el móvil) guardan js/css durante días y no ven los cambios tras un despliegue.
+$html = preg_replace_callback('#(src|href)="((?:js|css|vendor)/[^"?]+)"#', function ($m) {
+    $mtime = @filemtime(__DIR__ . '/' . $m[2]);
+    return $m[1] . '="' . $m[2] . ($mtime ? '?v=' . $mtime : '') . '"';
+}, $html);
+
 header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-cache');
 echo $html;
