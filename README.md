@@ -116,7 +116,10 @@ Sin cuenta, Glosa funciona como siempre. Con «Iniciar sesión con Google» (ico
   Conflictos: gana la posición más reciente, igual que entre pestañas.
 - **Abrir de Google Drive**: selector de Google con permiso `drive.file` (solo los
   ficheros que eliges; Glosa no ve el resto de tu Drive). El fichero se descarga
-  directamente de Google al navegador.
+  directamente de Google al navegador. En pantallas estrechas el selector de Google
+  no es usable (no tiene versión móvil), así que ahí se abre el selector de ficheros
+  del sistema, que en Android e iOS incluye Google Drive; el libro queda como fichero
+  local (la posición se sincroniza; en otro dispositivo hay que volver a elegirlo).
 
 Módulos: `js/auth.js` (sesión), `js/sync.js` (sincronización), `js/drive.js` (Drive).
 Servidor: `api.php` (rutas en su cabecera) sobre `usuarios-lib.php`, con su propia SQLite
