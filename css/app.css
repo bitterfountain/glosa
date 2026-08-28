@@ -386,7 +386,9 @@ kbd {
 .empty__catalogs-label { font-size: 13px !important; color: var(--fg-muted) !important; margin: 0 0 12px !important; }
 .empty__catalogs-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 .empty__catalogs-row--grid { display: grid; grid-template-columns: repeat(3, 1fr); }
-.empty__catalogs-row--grid .btn--catalog { justify-content: flex-start; padding: 0 12px; }
+.empty__catalogs-row--grid .btn--catalog { justify-content: flex-start; padding: 0 10px; min-width: 0; font-size: 13px; }
+.empty__catalogs-row--grid .btn--catalog svg { flex: none; }
+.empty__catalogs-row--grid .btn--catalog span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 560px) { .empty__catalogs-row--grid { grid-template-columns: repeat(2, 1fr); } }
 .btn--catalog { border: 1px solid var(--line-strong); background: var(--bg); font-weight: 600; padding: 0 16px; height: 38px; }
 .btn--catalog:hover { border-color: var(--accent); background: var(--bg-elev); }
