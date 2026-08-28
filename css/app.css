@@ -184,7 +184,7 @@ body { display: flex; flex-direction: column; }
 
 .empty { min-height: 100%; display: grid; place-items: center; padding: 40px 20px; }
 .empty__card {
-  max-width: 520px; text-align: center; padding: 44px 40px;
+  max-width: 660px; text-align: center; padding: 44px 32px;
   background: var(--bg-elev); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow-md);
 }
 .empty__icon {
@@ -443,7 +443,7 @@ kbd {
    Biblioteca: "Continuar leyendo" en el inicio y modal completo
    -------------------------------------------------------------------------- */
 .empty { grid-template-rows: auto auto; align-content: start; gap: 22px; padding-top: 28px; }
-.recent { width: min(640px, 100%); justify-self: center; padding-bottom: 20px; }
+.recent { width: min(660px, 100%); justify-self: center; padding-bottom: 20px; }
 .recent__title { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--fg-faint); margin: 0 0 10px 4px; text-align: center; }
 .recent__list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; justify-content: center; }
 .recent__list:has(.shelf-item:only-child) { grid-template-columns: minmax(300px, 420px); }
