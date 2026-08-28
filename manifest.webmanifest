@@ -3,7 +3,7 @@
   "short_name": "Glosa",
   "description": "Lee en otro idioma: pulsa una palabra y verás su traducción.",
   "start_url": "./",
-  "display": "standalone",
+  "display": "minimal-ui",
   "background_color": "#12151c",
   "theme_color": "#1b2a6b",
   "icons": [
