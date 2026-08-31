@@ -284,8 +284,7 @@ el texto consultado. Se desactiva en Ajustes.
 index.html            interfaz (textos con data-i18n)
 index.php             producción: registra la visita y sirve index.html
 visitas-lib.php       log de visitas (SQLite fuera del webroot, país por rangos IP, informes)
-telegram-webhook.php  bot de Telegram con los informes de visitas
-.env.example          plantilla de configuración del bot (el .env real no se sube)
+.env.example          plantilla de configuración (el .env real no se sube)
 css/app.css           estilos (tokens claro/oscuro, contenido de EPUB/HTML)
 js/i18n.js            textos de la interfaz en español, inglés, italiano y alemán
 js/dictionary.js      pares (12), carga bajo demanda, lematización EN/ES/IT/DE, consulta local y online, detección de idioma
@@ -307,12 +306,11 @@ tools/build_kaikki_ar.py árabe → inglés: kaikki (con formas flexionadas) + F
 tools/build_pivot.py  diccionario por pivote genérico (A→en + en→X → A→X)
 tools/build_cedict.py chino → inglés desde CC-CEDICT (pinyin + mapa tradicional → simplificado)
 tools/geo-import.php  carga la tabla IP → país en la BD de visitas (cron mensual)
-tools/telegram-daily.php informe diario de visitas por Telegram (cron 9:00)
 vendor/pdf*.js        pdf.js 3.11.174 (build legacy, funciona en file://)
 vendor/jszip.min.js   JSZip 3.10.1 (lectura de EPUB)
 ```
 
-## Contador de visitas y bot de Telegram
+## Contador de visitas
 
 En producción `index.php` registra cada visita antes de servir `index.html`: día, país,
 idioma del navegador y procedencia externa. Es anónimo y sin cookies: la IP no se guarda,
@@ -324,15 +322,9 @@ variable de entorno `GLOSA_DATA_DIR`; retención 400 días).
   [sapics/ip-location-db](https://github.com/sapics/ip-location-db), dominio público, ~550.000
   rangos IPv4+IPv6), sin llamadas a servicios externos. La carga y refresca
   `tools/geo-import.php` (cron mensual).
-- **Bot de Telegram** (`telegram-webhook.php`, @GlosaEBookReaderBot): `/stats` (hoy, ayer, 7 y
-  30 días, países, idiomas, procedencia), `/hoy`, `/ayer`, `/semana`, `/mes`, `/paises N`,
-  `/id`. Solo responde a los IDs de `TELEGRAM_ALLOWED_IDS`; a los demás les dice su ID (y lo
-  apunta en un log de la carpeta de datos) para poder darlos de alta. Cada mañana
-  `tools/telegram-daily.php` (cron) manda el resumen del día anterior.
 - **Configuración**: fichero `glosa.env` en la carpeta de datos (fuera del webroot) o `.env`
-  en local (ignorado por git), plantilla en `.env.example`: `TELEGRAM_BOT_TOKEN`,
-  `TELEGRAM_WEBHOOK_SECRET` (cabecera que Telegram manda en cada llamada; se registra con
-  `setWebhook`) y `TELEGRAM_ALLOWED_IDS`. La librería común es `visitas-lib.php`.
+  en local (ignorado por git), plantilla en `.env.example`. La librería común es
+  `visitas-lib.php`.
 
 
 ## Licencias y créditos
