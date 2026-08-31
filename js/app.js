@@ -214,8 +214,8 @@ window.App = (function () {
       }
     }
     if (!file) {
-      toast(t("lib.reselect", { title: rec.title }), 5000);
-      $("file-input").click();
+      // Sin confirm, el selector del sistema aparece "de la nada" (el toast queda tapado debajo).
+      if (confirm(t("lib.reselect", { title: rec.title }))) $("file-input").click();
       return;
     }
     await openFile(file, source);
