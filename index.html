@@ -25,7 +25,7 @@
       <span class="brand__logo" aria-hidden="true"></span>
       <span class="brand__name">Glo<span>sa</span><small class="brand__tag">Book Reader</small></span>
     </button>
-    <span class="toolbar__title" id="book-title" hidden><span class="toolbar__title-text" id="book-title-text"></span><span class="toolbar__title-pages" id="book-title-pages"></span></span>
+    <span class="toolbar__title" id="book-title" hidden><span class="toolbar__title-text" id="book-title-text"></span><span class="toolbar__title-pages" id="book-title-pages"></span><span class="read-progress read-progress--title" aria-hidden="true"><span class="read-progress__track"><span class="read-progress__fill" id="title-progress-fill"></span></span></span></span>
     <button class="btn btn--icon toolbar__burger" id="btn-menu" data-i18n-title="menu" aria-expanded="false" aria-controls="toolbar-groups">
       <svg class="icon-burger" viewBox="0 0 20 20"><path d="M3 5.5h14M3 10h14M3 14.5h14"/></svg>
       <svg class="icon-close" viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></svg>
@@ -52,10 +52,10 @@
 
   <div class="toolbar__group toolbar__nav" id="nav-controls" hidden>
     <button class="btn btn--icon" id="btn-prev" data-i18n-title="prev"><svg viewBox="0 0 20 20"><path d="M12.5 4 6.5 10l6 6"/></svg></button>
-    <label class="page-indicator">
-      <input type="number" id="page-input" min="1" value="1" aria-label="Página">
-      <span>/ <b id="page-count">0</b></span>
-    </label>
+    <div class="read-progress" id="read-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <span class="read-progress__track"><span class="read-progress__fill" id="read-progress-fill"></span></span>
+      <b class="read-progress__pct" id="read-progress-pct">0%</b>
+    </div>
     <button class="btn btn--icon" id="btn-next" data-i18n-title="next"><svg viewBox="0 0 20 20"><path d="m7.5 4 6 6-6 6"/></svg></button>
     <span class="toolbar__sep"></span>
     <button class="btn btn--icon" id="btn-zoom-out" data-i18n-title="zoom.out"><svg viewBox="0 0 20 20"><path d="M4 10h12"/></svg></button>

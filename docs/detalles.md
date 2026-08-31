@@ -50,7 +50,8 @@ Referencia técnica del proyecto. La presentación y el uso están en el
   tablas, notas y enlaces, y se monta un HTML que abre `textdoc.js` como cualquier
   libro (y queda en la biblioteca).
 - **Móvil** (≤ 980 px): la barra se reduce a logo, título del libro abierto
-  con "página / total" y un botón hamburguesa; abrir, par de idiomas,
+  con el % leído y su barrita de progreso, y un botón hamburguesa; abrir, par
+  de idiomas,
   navegación, zoom, vista, buscador y paneles se pliegan en un desplegable que
   se cierra al elegir una acción o al tocar el texto.
 - **Vista Página**: render fiel del PDF (pdf.js) con capa de texto clicable,

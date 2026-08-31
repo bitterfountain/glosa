@@ -100,8 +100,6 @@ window.App = (function () {
     try {
       const info = await Viewer.open(file);
       document.title = Viewer.name + " · Glosa";
-      $("page-input").value = "1";
-      $("page-input").max = String(info.pages);
       setMenu(false);
       updateTitleBar();
       onBookReady(info, file, source);
@@ -243,8 +241,23 @@ window.App = (function () {
     const el = $("book-title");
     if (!Viewer.loaded) { el.hidden = true; return; }
     $("book-title-text").textContent = Viewer.name;
-    $("book-title-pages").textContent = Viewer.page + " / " + Viewer.pages;
     el.hidden = false;
+    updateProgress();
+  }
+
+  // Barra de progreso del toolbar (y % del titulillo móvil): fracción leída según el scroll real,
+  // no la página/capítulo, que apenas cambia mientras se lee.
+  function updateProgress() {
+    if (!Viewer.loaded) return;
+    const pct = Math.round(Viewer.progress * 100);
+    $("read-progress-fill").style.width = pct + "%";
+    $("read-progress-pct").textContent = pct + "%";
+    const bar = $("read-progress");
+    bar.setAttribute("aria-valuenow", String(pct));
+    bar.setAttribute("aria-label", t("progress.title"));
+    bar.title = t("progress.title") + " · " + Viewer.page + " / " + Viewer.pages + " " + t(Viewer.unit === "cap." ? "unit.chapter" : "unit.page");
+    $("book-title-pages").textContent = pct + "%";
+    $("title-progress-fill").style.width = pct + "%";
   }
 
   // ---------------------------------------------------------------- paneles
@@ -279,8 +292,11 @@ window.App = (function () {
 
     $("btn-prev").addEventListener("click", () => Viewer.goTo(Viewer.page - 1));
     $("btn-next").addEventListener("click", () => Viewer.goTo(Viewer.page + 1));
-    $("page-input").addEventListener("change", (e) => Viewer.goTo(Number(e.target.value)));
-    $("page-input").addEventListener("keydown", (e) => { if (e.key === "Enter") { Viewer.goTo(Number(e.target.value)); e.target.blur(); } });
+    $("read-progress").addEventListener("click", (e) => {
+      if (e.target.closest(".read-progress__pct")) return; // el número no es zona de salto
+      const r = $("read-progress").querySelector(".read-progress__track").getBoundingClientRect();
+      Viewer.seek((e.clientX - r.left) / r.width);
+    });
     $("btn-zoom-in").addEventListener("click", Viewer.zoomIn);
     $("btn-zoom-out").addEventListener("click", Viewer.zoomOut);
     $("btn-zoom-fit").addEventListener("click", () => Viewer.setZoom("fit"));
@@ -312,9 +328,9 @@ window.App = (function () {
       if (key === "pair") { const p = Dictionary.PAIRS.find((x) => x.id === value); document.body.dataset.dst = p ? p.dst : ""; document.body.dataset.src = p ? p.src : ""; }
     });
 
-    Viewer.on("page", (n) => { $("page-input").value = String(n); updateTitleBar(); });
+    Viewer.on("page", updateTitleBar);
     Dictionary.onChange(() => applyChineseSimplified());
-    Viewer.on("scroll", schedulePositionSave);
+    Viewer.on("scroll", () => { schedulePositionSave(); updateProgress(); });
     window.addEventListener("pagehide", flushPosition);
     document.addEventListener("visibilitychange", () => { if (document.hidden) flushPosition(); else syncFromOtherTabs(); });
     window.addEventListener("focus", syncFromOtherTabs);

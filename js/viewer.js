@@ -114,14 +114,12 @@ window.Viewer = (function () {
     baseWidth = sampleVp.width;
     baseHeight = sampleVp.height;
     fitWidth = Math.max(firstVp.width, sampleVp.width);
-    $("page-count").textContent = String(pdf.numPages);
   }
 
   async function openBook(doc, file) {
     book = doc;
     docType = "book";
     fileName = doc.title || file.name.replace(/\.[a-z0-9]+$/i, "");
-    $("page-count").textContent = String(doc.chapters.length);
   }
 
   function count() { return docType === "pdf" ? (pdf ? pdf.numPages : 0) : (book ? book.chapters.length : 0); }
@@ -443,6 +441,20 @@ window.Viewer = (function () {
     emit("scroll");
   }
 
+  // Fracción leída del documento según el scroll (0..1). Con PDF en vista Página las alturas
+  // empiezan estimadas y el valor se afina solo cuando fixHeights() las asienta.
+  function progress() {
+    const v = viewerEl();
+    const max = v.scrollHeight - v.clientHeight;
+    return max > 0 ? Math.max(0, Math.min(1, v.scrollTop / max)) : 1;
+  }
+
+  // Salta a la fracción dada del documento (la barra de progreso del toolbar).
+  function seek(frac) {
+    const v = viewerEl();
+    v.scrollTop = Math.max(0, Math.min(1, frac)) * (v.scrollHeight - v.clientHeight);
+  }
+
   // Bloques (párrafos, encabezados, imágenes) del capítulo: en libros son el ancla de la posición fina,
   // porque sobreviven a un cambio de ancho de ventana; en PDF no hay bloques y se usa la fracción de página.
   function blocksOf(slot) {
@@ -565,8 +577,9 @@ window.Viewer = (function () {
   }
 
   return {
-    init, open, close, on, goTo, setZoom, zoomIn, zoomOut, setMode, sampleText, coverThumb, position, markPosition, transformText,
+    init, open, close, on, goTo, seek, setZoom, zoomIn, zoomOut, setMode, sampleText, coverThumb, position, markPosition, transformText,
     get page() { return currentPage; },
+    get progress() { return progress(); },
     get author() { return book ? book.author || "" : ""; },
     get pages() { return count(); },
     get name() { return fileName; },
