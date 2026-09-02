@@ -24,6 +24,7 @@ window.Viewer = (function () {
   let pageSlots = [];              // {el, num, rendered, task}
   let observer = null;
   let currentPage = 1;
+  let lastPos = null;              // última posición exacta conocida {page, block, offset}: a ella se vuelve si el texto se remaqueta
   let textCache = new Map();
   const listeners = { page: [], ready: [], scroll: [] };
   const READ_LINE = 16;            // px por debajo del borde superior del visor donde "empieza" la lectura
@@ -48,6 +49,7 @@ window.Viewer = (function () {
     $("nav-controls").hidden = false;
     document.body.dataset.doctype = docType;
     currentPage = 1;
+    lastPos = null;
     await layout();
     const info = { name: fileName, pages: count(), key: fileKey(file), unit: unit() };
     emit("ready", info);
@@ -60,6 +62,7 @@ window.Viewer = (function () {
     pageSlots = [];
     pdf = null; book = null; fileName = "";
     currentPage = 1;
+    lastPos = null;
     heightsReady = false; pendingTarget = null; pendingPos = null;
     hideMarker();
     $("empty-state").hidden = false;
@@ -438,7 +441,18 @@ window.Viewer = (function () {
       if (r.top > mid) { best = Math.max(1, s.num - 1); break; }
     }
     if (best !== currentPage) { currentPage = best; emit("page", currentPage); }
+    lastPos = position();
     emit("scroll");
+  }
+
+  // El texto se ha remaquetado sin scroll (tamaño de letra, fuente, ancho, imágenes que cargan): el mismo
+  // scrollTop ya enseña otro texto, así que se vuelve al último punto exacto conocido. Solo libros: en PDF
+  // las alturas las gobiernan fixHeights() y el remaquetado al cambiar de ancho.
+  function onReflow() {
+    if (docType !== "book" || !book || !lastPos || !pageSlots.length) return;
+    const keep = lastPos;
+    goTo(keep.page, keep);
+    trackScroll();
   }
 
   // Fracción leída del documento según el scroll (0..1). Con PDF en vista Página las alturas
@@ -457,25 +471,53 @@ window.Viewer = (function () {
 
   // Bloques (párrafos, encabezados, imágenes) del capítulo: en libros son el ancla de la posición fina,
   // porque sobreviven a un cambio de ancho de ventana; en PDF no hay bloques y se usa la fracción de página.
+  // Los EPUB envuelven los párrafos en contenedores (Gutenberg: <div class="chapter"><a id><p>…): anclar a un
+  // contenedor es anclar a una fracción de todo el capítulo, que cambia de párrafo con el tamaño de letra.
+  // Se baja hasta los bloques de verdad (párrafos, títulos, imágenes…); la lista se cachea por capítulo.
+  const LEAF_BLOCK = /^(P|H[1-6]|LI|UL|OL|DL|IMG|SVG|FIGURE|TABLE|PRE|BLOCKQUOTE|HR)$/;
+  function collectBlocks(el, out) {
+    for (const c of el.children) {
+      if (!LEAF_BLOCK.test(c.tagName) && c.children.length) collectBlocks(c, out);
+      else out.push(c);
+    }
+    return out;
+  }
   function blocksOf(slot) {
-    const content = docType === "book" ? slot.el.querySelector(".reflow__content") : null;
-    return content ? Array.from(content.children) : [];
+    if (docType !== "book") return [];
+    if (!slot.blocks) {
+      const content = slot.el.querySelector(".reflow__content");
+      slot.blocks = content ? collectBlocks(content, []) : [];
+    }
+    return slot.blocks;
   }
 
-  // Posición de lectura exacta: unidad actual, índice del bloque que cruza la línea de lectura
-  // (-1 si no hay bloques) y fracción recorrida de ese bloque. La fracción puede ser algo negativa
-  // (la unidad "actual" se decide más abajo, en la línea del 40 %) para que al restaurar no se pierdan líneas.
+  // Unidad (página o capítulo) que cruza la línea de lectura, por geometría: currentPage se actualiza
+  // solo al hacer scroll y se queda vieja cuando el texto se remaqueta sin scroll (tamaño de letra,
+  // fuente, giro del móvil, imágenes que cargan); fiarse de ella daba posiciones falsas.
+  function slotAtLine(line) {
+    let last = pageSlots[0];
+    for (const s of pageSlots) {
+      const r = s.el.getBoundingClientRect();
+      if (r.bottom >= line) return s;
+      last = s;
+    }
+    return last;
+  }
+
+  // Posición de lectura exacta: unidad bajo la línea de lectura, índice del bloque que la cruza
+  // (-1 si no hay bloques) y fracción recorrida de ese bloque. Puede ser algo negativa si la línea
+  // cae en el hueco antes del primer bloque; al restaurar (goTo) se compensa igual.
   function position() {
-    const slot = pageSlots[currentPage - 1];
-    if (!slot) return { page: currentPage, block: -1, offset: 0 };
+    if (!pageSlots.length) return { page: currentPage, block: -1, offset: 0 };
     const line = viewerEl().getBoundingClientRect().top + READ_LINE;
+    const slot = slotAtLine(line);
     const frac = (r) => Math.max(-1, Math.min(1, Math.round(((line - r.top) / (r.height || 1)) * 1000) / 1000));
     const blocks = blocksOf(slot);
     for (let i = 0; i < blocks.length; i++) {
       const r = blocks[i].getBoundingClientRect();
-      if (r.height > 0 && r.bottom >= line) return { page: currentPage, block: i, offset: frac(r) };
+      if (r.height > 0 && r.bottom >= line) return { page: slot.num, block: i, offset: frac(r) };
     }
-    return { page: currentPage, block: -1, offset: frac(slot.el.getBoundingClientRect()) };
+    return { page: slot.num, block: -1, offset: frac(slot.el.getBoundingClientRect()) };
   }
 
   // Aplica fn a todos los nodos de texto del libro en pantalla (solo libros: EPUB/HTML/TXT).
@@ -518,6 +560,7 @@ window.Viewer = (function () {
     const r = anchor.getBoundingClientRect();
     const top = r.top - v.getBoundingClientRect().top + v.scrollTop;
     v.scrollTop = top - READ_LINE + (pos ? (pos.offset || 0) * r.height : 0);
+    lastPos = { page: n, block: pos && pos.block >= 0 ? pos.block : -1, offset: pos ? pos.offset || 0 : 0 };
     const waitHeights = docType === "pdf" && mode === "page" && !heightsReady;
     pendingTarget = waitHeights ? n : null;
     pendingPos = waitHeights && pos ? { block: -1, offset: pos.offset || 0 } : null;
@@ -568,6 +611,7 @@ window.Viewer = (function () {
       requestAnimationFrame(() => { trackScroll(); ticking = false; });
     });
     viewerEl().addEventListener("click", onBookLinkClick);
+    if (window.ResizeObserver) new ResizeObserver(onReflow).observe(pagesEl());
     let resizeTimer = 0;
     window.addEventListener("resize", () => {
       if (docType !== "pdf" || !pdf || mode !== "page" || zoom !== "fit") return;
