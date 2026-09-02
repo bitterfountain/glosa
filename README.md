@@ -7,9 +7,16 @@ A book reader that runs in the browser with instant translation: tap any word
 and a popup shows its translation. No server, no install, no account: it also
 works by opening `index.html` straight from disk.
 
-<p align="center">
-  <img src="docs/usage.gif" width="280" alt="Glosa on a phone: tapping a word in the book shows its translation">
-</p>
+<table align="center">
+  <tr>
+    <td align="center"><img src="docs/usage-en-es.gif" width="280" alt="Glosa on a phone: reading in English, tapping a word shows its Spanish translation"></td>
+    <td align="center"><img src="docs/usage-de-es.gif" width="280" alt="Glosa on a phone: reading in German, tapping a word shows its Spanish translation"></td>
+  </tr>
+  <tr>
+    <td align="center">Reading in English, translating into Spanish</td>
+    <td align="center">Reading in German, translating into Spanish</td>
+  </tr>
+</table>
 
 ## What it does
 
