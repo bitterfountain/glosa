@@ -157,10 +157,15 @@ window.Library = (function () {
     if (!rec) return 0;
     const prev = rec.pos || { block: -1, offset: 0 };
     const next = pos ? { block: pos.block, offset: pos.offset } : prev;
-    if (rec.page === page && prev.block === next.block && prev.offset === next.offset) return 0;
+    // La fracción se guarda también cuando la posición no cambia (al abrir un libro guardado antes de
+    // existir la fracción, o cuando el visor la afina al asentar alturas): si no, la estantería seguiría
+    // enseñando la estimación por capítulo. Redondeada a milésimas para no guardar por cada píxel.
+    const frac = typeof progress === "number" && isFinite(progress) ? Math.round(Math.max(0, Math.min(1, progress)) * 1000) / 1000 : null;
+    const samePos = rec.page === page && prev.block === next.block && prev.offset === next.offset;
+    if (samePos && (frac === null || frac === rec.progress)) return 0;
     rec.page = page;
     rec.pos = next;
-    if (typeof progress === "number" && isFinite(progress)) rec.progress = Math.max(0, Math.min(1, progress));
+    if (frac !== null) rec.progress = frac;
     rec.lastOpened = rec.posAt = Date.now();
     persist();
     if (onChange) onChange("position", rec);
