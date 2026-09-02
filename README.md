@@ -1,69 +1,69 @@
-# Glosa — lector de libros con diccionario
+# Glosa — a book reader with a built-in dictionary
 
-**Pruébalo: https://glosa.dyndns.org** · Código: https://github.com/bitterfountain/glosa
-(público; los diccionarios conservan las licencias de sus fuentes, ver abajo).
+**Try it: https://glosa.dyndns.org** · Code: https://github.com/bitterfountain/glosa
+(public; the dictionaries keep the licenses of their sources, see below).
 
-Lector de libros en el navegador con traducción instantánea: pulsas cualquier
-palabra y aparece un popup con su traducción. Sin servidor, sin instalación,
-sin cuenta: también funciona abriendo `index.html` directamente desde disco.
+A book reader that runs in the browser with instant translation: tap any word
+and a popup shows its translation. No server, no install, no account: it also
+works by opening `index.html` straight from disk.
 
 <p align="center">
-  <img src="docs/usage.gif" width="280" alt="Glosa en el móvil: se pulsa una palabra del libro y aparece su traducción">
+  <img src="docs/usage.gif" width="280" alt="Glosa on a phone: tapping a word in the book shows its translation">
 </p>
 
-## Qué hace
+## What it does
 
-- **Traducción al toque**: popup con traducciones por acepción, categoría
-  gramatical, lema (houses → house), pronunciación y enlace a Wiktionary.
-  Seleccionando varias palabras se traduce la frase entera (consulta online).
-- **Seis idiomas**: inglés, español, italiano y alemán combinables en las 12
-  direcciones; árabe como destino y como idioma de lectura (RTL, lematizador
-  propio); chino como idioma de lectura (segmentación de palabras y conversión
-  tradicional → simplificado).
-- **Diccionarios incrustados**: 18 pares generados de WikDict, FreeDict,
-  kaikki.org y CC-CEDICT, con lematización por reglas (houses → house,
-  ginge → gehen, يكتب → كتب). Si una palabra no está, consulta online opcional
-  (MyMemory y Wiktionary).
-- **Formatos**: PDF (vista página fiel o vista texto), EPUB con imágenes,
-  HTML y TXT.
-- **Biblioteca**: cada libro queda guardado con portada y el punto exacto por
-  el que ibas; "Continuar leyendo" en la pantalla de inicio.
-- **Catálogo integrado**: Top 100 de Project Gutenberg en inglés, español,
-  italiano, alemán y chino, y clásicos en árabe de Wikisource; se descargan y
-  abren con un clic.
-- **Cuenta opcional con Google**: sincroniza la biblioteca y la posición de
-  lectura entre dispositivos y abre libros de Google Drive.
-- Y además: interfaz en 4 idiomas, detección automática del idioma del libro,
-  modo claro/oscuro, versión móvil, buscador, vocabulario exportable a CSV y
-  atajos de teclado.
+- **Tap to translate**: popup with translations by sense, part of speech,
+  lemma (houses → house), pronunciation and a link to Wiktionary. Select
+  several words to translate the whole phrase (online lookup).
+- **Six languages**: English, Spanish, Italian and German in all 12
+  directions; Arabic as target and as reading language (RTL, custom
+  lemmatizer); Chinese as reading language (word segmentation and
+  traditional → simplified conversion).
+- **Embedded dictionaries**: 18 language pairs built from WikDict, FreeDict,
+  kaikki.org and CC-CEDICT, with rule-based lemmatization (houses → house,
+  ginge → gehen, يكتب → كتب). If a word is missing, optional online lookup
+  (MyMemory and Wiktionary).
+- **Formats**: PDF (faithful page view or text view), EPUB with images, HTML
+  and TXT.
+- **Library**: every book is saved with its cover and the exact spot you were
+  at; "Continue reading" on the home screen.
+- **Built-in catalog**: Project Gutenberg's Top 100 in English, Spanish,
+  Italian, German and Chinese, plus Arabic classics from Wikisource; they
+  download and open with one click.
+- **Optional Google account**: syncs the library and reading position across
+  devices and opens books from Google Drive.
+- Also: UI in 4 languages, automatic detection of the book's language,
+  light/dark mode, mobile version, search, vocabulary export to CSV and
+  keyboard shortcuts.
 
-## Uso
+## Usage
 
-1. Entra en https://glosa.dyndns.org (o abre `index.html` en Chrome, Edge o
-   Firefox: todo funciona desde disco salvo el catálogo, que necesita el proxy
-   del servidor).
-2. La primera vez elige tu idioma de lectura y el idioma al que traducir (el
-   segundo viene preseleccionado según tu navegador). Se cambian cuando
-   quieras desde las banderas de la barra.
-3. Abre un libro (PDF, EPUB, HTML o TXT), arrástralo a la ventana o elige uno
-   del catálogo.
-4. Pulsa una palabra. Selecciona varias para traducir la frase.
+1. Go to https://glosa.dyndns.org (or open `index.html` in Chrome, Edge or
+   Firefox: everything works from disk except the catalog, which needs the
+   server proxy).
+2. The first time, pick your reading language and the language to translate
+   into (the latter is preselected from your browser). You can change them
+   any time from the flags in the toolbar.
+3. Open a book (PDF, EPUB, HTML or TXT), drag it onto the window or pick one
+   from the catalog.
+4. Tap a word. Select several to translate the phrase.
 
-## Desarrollo
+## Development
 
-Basta un servidor estático o `php -S 127.0.0.1:8080` (con PHP, `index.php`
-registra la visita y sirve `index.html`). El detalle técnico completo
-(diccionarios y cómo regenerarlos, lematización, estructura del código,
-cuenta de Google, contador de visitas, gotchas) está en
-[docs/detalles.md](docs/detalles.md).
+Any static server will do, or `php -S 127.0.0.1:8080` (with PHP, `index.php`
+logs the visit and serves `index.html`). The full technical reference
+(dictionaries and how to rebuild them, lemmatization, code structure, Google
+account, visit counter, gotchas) is in [docs/detalles.md](docs/detalles.md)
+(in Spanish).
 
-## Licencias y créditos
+## Licenses and credits
 
-- Código de Glosa: © leukasoft (licencia por decidir; mientras tanto, todos los derechos reservados).
+- Glosa code: © leukasoft (license to be decided; all rights reserved in the meantime).
 - pdf.js (Apache 2.0), JSZip (MIT).
-- Diccionarios: WikDict (Wiktionary vía DBnary, CC BY-SA 3.0), FreeDict (GPL),
-  kaikki.org (Wiktionary, CC BY-SA 4.0). Los ficheros `dict/*.js` derivan de ellos y
-  heredan sus licencias.
-- Consulta online: MyMemory y Wiktionary. Libros: Project Gutenberg.
-- Tabla IP → país: geo-whois-asn-country (sapics/ip-location-db, PDDL / dominio público).
-- Chino: CC-CEDICT (MDBG, CC BY-SA 4.0). Árabe: kaikki.org (CC BY-SA 4.0), FreeDict (GPL).
+- Dictionaries: WikDict (Wiktionary via DBnary, CC BY-SA 3.0), FreeDict (GPL),
+  kaikki.org (Wiktionary, CC BY-SA 4.0). The `dict/*.js` files derive from them
+  and inherit their licenses.
+- Online lookup: MyMemory and Wiktionary. Books: Project Gutenberg.
+- IP → country table: geo-whois-asn-country (sapics/ip-location-db, PDDL / public domain).
+- Chinese: CC-CEDICT (MDBG, CC BY-SA 4.0). Arabic: kaikki.org (CC BY-SA 4.0), FreeDict (GPL).
