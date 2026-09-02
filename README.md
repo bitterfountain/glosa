@@ -7,6 +7,10 @@ Lector de libros en el navegador con traducción instantánea: pulsas cualquier
 palabra y aparece un popup con su traducción. Sin servidor, sin instalación,
 sin cuenta: también funciona abriendo `index.html` directamente desde disco.
 
+<p align="center">
+  <img src="docs/usage.gif" width="280" alt="Glosa en el móvil: se pulsa una palabra del libro y aparece su traducción">
+</p>
+
 ## Qué hace
 
 - **Traducción al toque**: popup con traducciones por acepción, categoría
