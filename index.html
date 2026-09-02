@@ -107,6 +107,10 @@
 <main class="workspace" id="workspace">
   <section class="viewer" id="viewer" tabindex="0">
     <div class="empty" id="empty-state">
+      <section class="recent" id="recent" hidden>
+        <h2 class="recent__title" data-i18n="lib.recent">Continuar leyendo</h2>
+        <div class="recent__list" id="recent-list"></div>
+      </section>
       <div class="empty__card">
         <div class="empty__icon" aria-hidden="true"></div>
         <h1 data-i18n="empty.h1">Lee en otro idioma sin salir de la página</h1>
@@ -158,10 +162,6 @@
         </div>
         <p class="empty__meta" id="dict-meta"></p>
       </div>
-      <section class="recent" id="recent" hidden>
-        <h2 class="recent__title" data-i18n="lib.recent">Continuar leyendo</h2>
-        <div class="recent__list" id="recent-list"></div>
-      </section>
       <p class="empty__legal"><span class="empty__appname">Glosa Book Reader</span> · <a href="privacy/" data-i18n="legal.privacy">Privacidad</a> · <a href="conditions/" data-i18n="legal.terms">Condiciones</a></p>
     </div>
     <div class="pages" id="pages" hidden></div>
