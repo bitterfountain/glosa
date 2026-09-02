@@ -11,10 +11,12 @@ works by opening `index.html` straight from disk.
   <tr>
     <td align="center"><img src="docs/usage-en-es.gif" width="280" alt="Glosa on a phone: reading in English, tapping a word shows its Spanish translation"></td>
     <td align="center"><img src="docs/usage-de-es.gif" width="280" alt="Glosa on a phone: reading in German, tapping a word shows its Spanish translation"></td>
+    <td align="center"><img src="docs/usage-es-en.gif" width="280" alt="Glosa on a phone: reading in Spanish, tapping a word shows its English translation"></td>
   </tr>
   <tr>
     <td align="center">Reading in English, translating into Spanish</td>
     <td align="center">Reading in German, translating into Spanish</td>
+    <td align="center">Reading in Spanish, translating into English</td>
   </tr>
 </table>
 
