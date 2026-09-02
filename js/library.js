@@ -233,14 +233,11 @@ window.Library = (function () {
     return typeof r.progress === "number" && isFinite(r.progress) ? Math.max(0, Math.min(1, r.progress)) : null;
   }
 
-  // Porcentaje leído para la estantería: la fracción guardada al leer o, si el registro no la tiene,
-  // una estimación por unidades (capítulo o página, más la fracción dentro de ella).
+  // Porcentaje leído para la estantería: solo la fracción guardada al leer (la misma que enseña la barra
+  // del visor); no se estima nada. null si el libro no se ha abierto desde que se guarda.
   function percentOf(r) {
     const p = progressOf(r);
-    if (p !== null) return Math.round(p * 100);
-    if (!r.pages) return 0;
-    const inUnit = r.pos && isFinite(r.pos.offset) ? Math.max(0, Math.min(1, r.pos.offset)) : 0;
-    return Math.max(0, Math.min(100, Math.round((((r.page || 1) - 1 + inUnit) / r.pages) * 100)));
+    return p === null ? null : Math.round(p * 100);
   }
 
   // Relee el índice de localStorage (otra pestaña puede haberlo cambiado) y repinta la estantería.
@@ -307,11 +304,11 @@ window.Library = (function () {
     const sub = document.createElement("span");
     sub.className = "shelf-item__sub";
     const pct = percentOf(rec);
-    sub.textContent = [rec.author, rec.lastOpened ? pct + "%" : "", fmtDate(rec.lastOpened)].filter(Boolean).join(" · ");
+    sub.textContent = [rec.author, pct === null ? "" : pct + "%", fmtDate(rec.lastOpened)].filter(Boolean).join(" · ");
     const bar = document.createElement("span");
     bar.className = "shelf-item__bar";
     const fill = document.createElement("span");
-    fill.style.width = pct + "%";
+    fill.style.width = (pct || 0) + "%";
     bar.appendChild(fill);
     const badge = document.createElement("span");
     badge.className = "shelf-item__type";
