@@ -61,6 +61,7 @@ function usuarios_db($path = USUARIOS_DB)
             page INTEGER NOT NULL DEFAULT 1,
             pos_block INTEGER NOT NULL DEFAULT -1,
             pos_offset REAL NOT NULL DEFAULT 0,
+            progress REAL NOT NULL DEFAULT -1,
             added INTEGER NOT NULL DEFAULT 0,
             last_opened INTEGER NOT NULL DEFAULT 0,
             pos_at INTEGER NOT NULL DEFAULT 0,
@@ -68,6 +69,10 @@ function usuarios_db($path = USUARIOS_DB)
             deleted_at INTEGER,
             PRIMARY KEY (user_id, key)
         )');
+        // Bases anteriores a la fracción leída (2026-09-02): se añade la columna sin tocar el resto.
+        if (!usuarios_tiene_columna($db, 'user_books', 'progress')) {
+            $db->exec('ALTER TABLE user_books ADD COLUMN progress REAL NOT NULL DEFAULT -1');
+        }
         $db->exec('CREATE TABLE IF NOT EXISTS ratelimit (
             bucket TEXT PRIMARY KEY,
             n INTEGER NOT NULL,
@@ -306,10 +311,23 @@ function usuarios_validar_libro($b)
         'pos_block' => isset($pos['block']) && is_numeric($pos['block']) ? (int) $pos['block'] : -1,
         // la fracción puede ser algo negativa (ver Viewer.position en js/viewer.js)
         'pos_offset' => isset($pos['offset']) && is_numeric($pos['offset']) ? max(-1.0, min(1.0, (float) $pos['offset'])) : 0.0,
+        // fracción leída del libro entero (0..1); -1 = el cliente no la mandó (registro antiguo)
+        'progress' => isset($b['progress']) && is_numeric($b['progress']) ? max(0.0, min(1.0, (float) $b['progress'])) : -1.0,
         'added' => $entero(isset($b['added']) ? $b['added'] : 0),
         'last_opened' => $entero(isset($b['lastOpened']) ? $b['lastOpened'] : 0),
         'pos_at' => $entero(isset($b['posAt']) ? $b['posAt'] : 0),
     );
+}
+
+function usuarios_tiene_columna($db, $tabla, $columna)
+{
+    $res = $db->query('PRAGMA table_info(' . $tabla . ')');
+    while ($res && ($r = $res->fetchArray(SQLITE3_ASSOC))) {
+        if ($r['name'] === $columna) {
+            return true;
+        }
+    }
+    return false;
 }
 
 // Fila de la BD → ficha tal como la entiende js/library.js.
@@ -329,6 +347,7 @@ function usuarios_libro_publico($row)
         'pages' => (int) $row['pages'],
         'page' => (int) $row['page'],
         'pos' => (int) $row['pos_at'] > 0 ? array('block' => (int) $row['pos_block'], 'offset' => (float) $row['pos_offset']) : null,
+        'progress' => (float) $row['progress'] >= 0 ? (float) $row['progress'] : null,
         'added' => (int) $row['added'],
         'lastOpened' => (int) $row['last_opened'],
         'posAt' => (int) $row['pos_at'],
@@ -410,6 +429,7 @@ function usuarios_libros_sync($db, $userId, $libros, $ahora = null)
                 $merged['page'] = (int) $row['page'];
                 $merged['pos_block'] = (int) $row['pos_block'];
                 $merged['pos_offset'] = (float) $row['pos_offset'];
+                $merged['progress'] = (float) $row['progress'];
                 $merged['pos_at'] = (int) $row['pos_at'];
             }
             if (!$abiertoDespues) {
@@ -431,15 +451,15 @@ function usuarios_libros_sync($db, $userId, $libros, $ahora = null)
 
 function usuarios_libro_insertar($db, $userId, $b, $ahora)
 {
-    $st = $db->prepare('INSERT INTO user_books (user_id, key, source_kind, source_ref, name, size, type, title, author, pages, page, pos_block, pos_offset, added, last_opened, pos_at, updated_at, deleted_at)
-        VALUES (:u, :key, :source_kind, :source_ref, :name, :size, :type, :title, :author, :pages, :page, :pos_block, :pos_offset, :added, :last_opened, :pos_at, :updated_at, NULL)');
+    $st = $db->prepare('INSERT INTO user_books (user_id, key, source_kind, source_ref, name, size, type, title, author, pages, page, pos_block, pos_offset, progress, added, last_opened, pos_at, updated_at, deleted_at)
+        VALUES (:u, :key, :source_kind, :source_ref, :name, :size, :type, :title, :author, :pages, :page, :pos_block, :pos_offset, :progress, :added, :last_opened, :pos_at, :updated_at, NULL)');
     usuarios_libro_bind($st, $userId, $b, $ahora);
     $st->execute();
 }
 
 function usuarios_libro_actualizar($db, $userId, $b, $ahora, $resucitar)
 {
-    $st = $db->prepare('UPDATE user_books SET source_kind = :source_kind, source_ref = :source_ref, name = :name, size = :size, type = :type, title = :title, author = :author, pages = :pages, page = :page, pos_block = :pos_block, pos_offset = :pos_offset, added = :added, last_opened = :last_opened, pos_at = :pos_at, updated_at = :updated_at' . ($resucitar ? ', deleted_at = NULL' : '') . '
+    $st = $db->prepare('UPDATE user_books SET source_kind = :source_kind, source_ref = :source_ref, name = :name, size = :size, type = :type, title = :title, author = :author, pages = :pages, page = :page, pos_block = :pos_block, pos_offset = :pos_offset, progress = :progress, added = :added, last_opened = :last_opened, pos_at = :pos_at, updated_at = :updated_at' . ($resucitar ? ', deleted_at = NULL' : '') . '
         WHERE user_id = :u AND key = :key');
     usuarios_libro_bind($st, $userId, $b, $ahora);
     $st->execute();
@@ -460,6 +480,7 @@ function usuarios_libro_bind($st, $userId, $b, $ahora)
     $st->bindValue(':page', (int) $b['page'], SQLITE3_INTEGER);
     $st->bindValue(':pos_block', (int) $b['pos_block'], SQLITE3_INTEGER);
     $st->bindValue(':pos_offset', (float) $b['pos_offset'], SQLITE3_FLOAT);
+    $st->bindValue(':progress', isset($b['progress']) ? (float) $b['progress'] : -1.0, SQLITE3_FLOAT);
     $st->bindValue(':added', (int) $b['added'], SQLITE3_INTEGER);
     $st->bindValue(':last_opened', (int) $b['last_opened'], SQLITE3_INTEGER);
     $st->bindValue(':pos_at', (int) $b['pos_at'], SQLITE3_INTEGER);

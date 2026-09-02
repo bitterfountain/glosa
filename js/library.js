@@ -148,9 +148,10 @@ window.Library = (function () {
     return rec;
   }
 
-  // Posición de lectura: unidad (página o capítulo) y, dentro de ella, bloque y fracción ({block, offset}).
+  // Posición de lectura: unidad (página o capítulo) y, dentro de ella, bloque y fracción ({block, offset}),
+  // más la fracción leída del libro entero (0..1, la misma que enseña la barra de progreso del visor).
   // Devuelve la marca de tiempo del guardado (posAt) si cambió algo, o 0 si ya estaba igual.
-  function updatePosition(id, page, pos) {
+  function updatePosition(id, page, pos, progress) {
     load();
     const rec = find(id);
     if (!rec) return 0;
@@ -159,6 +160,7 @@ window.Library = (function () {
     if (rec.page === page && prev.block === next.block && prev.offset === next.offset) return 0;
     rec.page = page;
     rec.pos = next;
+    if (typeof progress === "number" && isFinite(progress)) rec.progress = Math.max(0, Math.min(1, progress));
     rec.lastOpened = rec.posAt = Date.now();
     persist();
     if (onChange) onChange("position", rec);
@@ -174,7 +176,7 @@ window.Library = (function () {
     if (!remote || !remote.key) return false;
     let rec = findByKey(remote.key);
     if (!rec) {
-      rec = { id: remote.key, key: remote.key, source: remote.source || LOCAL, name: remote.name || "", size: remote.size || 0, type: remote.type || "epub", title: remote.title || remote.name || "?", author: remote.author || "", pages: remote.pages || 0, page: remote.page || 1, pos: remote.pos || null, added: remote.added || Date.now(), lastOpened: remote.lastOpened || 0, posAt: remote.posAt || 0, cover: null, stored: false };
+      rec = { id: remote.key, key: remote.key, source: remote.source || LOCAL, name: remote.name || "", size: remote.size || 0, type: remote.type || "epub", title: remote.title || remote.name || "?", author: remote.author || "", pages: remote.pages || 0, page: remote.page || 1, pos: remote.pos || null, progress: progressOf(remote), added: remote.added || Date.now(), lastOpened: remote.lastOpened || 0, posAt: remote.posAt || 0, cover: null, stored: false };
       items = [rec, ...items];
       persist();
       render();
@@ -183,7 +185,13 @@ window.Library = (function () {
     const newer = (remote.posAt || 0) > (rec.posAt || 0);
     const laterOpen = (remote.lastOpened || 0) > (rec.lastOpened || 0);
     if (!newer && !laterOpen) return false;
-    if (newer) { rec.page = remote.page || rec.page; rec.pos = remote.pos || rec.pos; rec.posAt = remote.posAt; }
+    if (newer) {
+      rec.page = remote.page || rec.page;
+      rec.pos = remote.pos || rec.pos;
+      rec.posAt = remote.posAt;
+      const p = progressOf(remote);
+      if (p !== null) rec.progress = p;
+    }
     if (laterOpen) {
       // la misma regla que el servidor: los metadatos los pone quien lo abrió más tarde
       rec.lastOpened = remote.lastOpened;
@@ -212,7 +220,22 @@ window.Library = (function () {
     return items.map(toRemote);
   }
   function toRemote(r) {
-    return { key: r.key, source: r.source || LOCAL, name: r.name, size: r.size || 0, type: r.type, title: r.title, author: r.author || "", pages: r.pages || 0, page: r.page || 1, pos: r.pos || null, added: r.added || 0, lastOpened: r.lastOpened || 0, posAt: r.posAt || 0 };
+    return { key: r.key, source: r.source || LOCAL, name: r.name, size: r.size || 0, type: r.type, title: r.title, author: r.author || "", pages: r.pages || 0, page: r.page || 1, pos: r.pos || null, progress: progressOf(r), added: r.added || 0, lastOpened: r.lastOpened || 0, posAt: r.posAt || 0 };
+  }
+
+  // Fracción leída guardada (0..1) o null si el registro no la tiene (libros de antes de guardarla).
+  function progressOf(r) {
+    return typeof r.progress === "number" && isFinite(r.progress) ? Math.max(0, Math.min(1, r.progress)) : null;
+  }
+
+  // Porcentaje leído para la estantería: la fracción guardada al leer o, si el registro no la tiene,
+  // una estimación por unidades (capítulo o página, más la fracción dentro de ella).
+  function percentOf(r) {
+    const p = progressOf(r);
+    if (p !== null) return Math.round(p * 100);
+    if (!r.pages) return 0;
+    const inUnit = r.pos && isFinite(r.pos.offset) ? Math.max(0, Math.min(1, r.pos.offset)) : 0;
+    return Math.max(0, Math.min(100, Math.round((((r.page || 1) - 1 + inUnit) / r.pages) * 100)));
   }
 
   // Relee el índice de localStorage (otra pestaña puede haberlo cambiado) y repinta la estantería.
@@ -278,9 +301,8 @@ window.Library = (function () {
     title.textContent = rec.title;
     const sub = document.createElement("span");
     sub.className = "shelf-item__sub";
-    const unit = t(rec.type === "pdf" ? "unit.page" : "unit.chapter");
-    const pct = rec.pages ? Math.min(100, Math.round(((rec.page || 1) / rec.pages) * 100)) : 0;
-    sub.textContent = [rec.author, rec.pages ? unit + " " + (rec.page || 1) + " / " + rec.pages : "", fmtDate(rec.lastOpened)].filter(Boolean).join(" · ");
+    const pct = percentOf(rec);
+    sub.textContent = [rec.author, rec.lastOpened ? pct + "%" : "", fmtDate(rec.lastOpened)].filter(Boolean).join(" · ");
     const bar = document.createElement("span");
     bar.className = "shelf-item__bar";
     const fill = document.createElement("span");

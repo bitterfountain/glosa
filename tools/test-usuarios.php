@@ -21,6 +21,16 @@ function ok($cond, $msg)
     }
 }
 
+// Base de antes de la columna progress (2026-09-02): al abrirla se añade sola.
+$vieja = new SQLite3($tmp . '/vieja.sqlite');
+$vieja->exec('CREATE TABLE user_books (user_id INTEGER NOT NULL, key TEXT NOT NULL, source_kind TEXT NOT NULL DEFAULT "local", source_ref TEXT NOT NULL DEFAULT "", name TEXT NOT NULL DEFAULT "", size INTEGER NOT NULL DEFAULT 0, type TEXT NOT NULL DEFAULT "", title TEXT NOT NULL DEFAULT "", author TEXT NOT NULL DEFAULT "", pages INTEGER NOT NULL DEFAULT 0, page INTEGER NOT NULL DEFAULT 1, pos_block INTEGER NOT NULL DEFAULT -1, pos_offset REAL NOT NULL DEFAULT 0, added INTEGER NOT NULL DEFAULT 0, last_opened INTEGER NOT NULL DEFAULT 0, pos_at INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL DEFAULT 0, deleted_at INTEGER, PRIMARY KEY (user_id, key))');
+$vieja->exec('INSERT INTO user_books (user_id, key, page, pos_at) VALUES (1, "gb:1", 4, 100)');
+$vieja->close();
+$migrada = usuarios_db($tmp . '/vieja.sqlite');
+ok($migrada && usuarios_tiene_columna($migrada, 'user_books', 'progress'), 'una base antigua gana la columna progress al abrirse');
+ok($migrada && usuarios_libros($migrada, 1)[0]['progress'] === null && usuarios_libros($migrada, 1)[0]['page'] === 4, 'sus filas quedan intactas y sin fracción leída');
+$migrada->close();
+
 $db = usuarios_db($tmp . '/test.sqlite');
 ok($db !== null, 'abre la BD y crea las tablas');
 
@@ -81,6 +91,10 @@ ok(usuarios_validar_libro($libro(array('source' => array('kind' => 'ftp')))) ===
 ok(usuarios_validar_libro($libro(array('title' => str_repeat('x', 1000))))['title'] === str_repeat('x', 300), 'título largo se recorta');
 ok(usuarios_validar_libro($libro(array('page' => -4)))['page'] === 1, 'página negativa pasa a 1');
 ok(usuarios_validar_libro($libro(array('pos' => array('block' => 1, 'offset' => 7))))['pos_offset'] === 1.0, 'offset fuera de rango se acota');
+ok(usuarios_validar_libro($libro())['progress'] === -1.0, 'sin fracción leída queda -1 (registro antiguo)');
+ok(usuarios_validar_libro($libro(array('progress' => 0.42)))['progress'] === 0.42, 'la fracción leída se conserva');
+ok(usuarios_validar_libro($libro(array('progress' => 3)))['progress'] === 1.0, 'fracción leída fuera de rango se acota');
+ok(usuarios_validar_libro($libro(array('progress' => 'x')))['progress'] === -1.0, 'fracción leída no numérica se ignora');
 ok(usuarios_validar_libro($libro(array('type' => 'exe')))['type'] === '', 'tipo desconocido se vacía');
 
 // ---------------------------------------------------------------- sincronización
@@ -103,6 +117,11 @@ ok(usuarios_libros($db, $ana['id'])[0]['page'] === 5, 'una posición más vieja 
 $sync($ana['id'], array($libro(array('page' => 9, 'posAt' => 3000, 'lastOpened' => 3000, 'pos' => array('block' => 0, 'offset' => 0.5)))));
 $l = usuarios_libros($db, $ana['id'])[0];
 ok($l['page'] === 9 && $l['posAt'] === 3000 && $l['pos']['block'] === 0, 'una posición más nueva gana');
+ok($l['progress'] === null, 'sin fracción leída el servidor devuelve null');
+$sync($ana['id'], array($libro(array('page' => 9, 'posAt' => 3100, 'lastOpened' => 3100, 'progress' => 0.37))));
+ok(abs(usuarios_libros($db, $ana['id'])[0]['progress'] - 0.37) < 1e-9, 'la fracción leída viaja con la posición');
+$sync($ana['id'], array($libro(array('page' => 2, 'posAt' => 1600, 'lastOpened' => 1600, 'progress' => 0.05))));
+ok(abs(usuarios_libros($db, $ana['id'])[0]['progress'] - 0.37) < 1e-9, 'una posición más vieja no pisa la fracción leída');
 // metadatos: los pone quien lo abrió más tarde, aunque su posición sea vieja
 $sync($ana['id'], array($libro(array('title' => 'Orgullo y prejuicio', 'page' => 1, 'posAt' => 100, 'lastOpened' => 4000))));
 $l = usuarios_libros($db, $ana['id'])[0];

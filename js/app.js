@@ -162,7 +162,7 @@ window.App = (function () {
     positionTimer = 0;
     if (!positionKey || !Viewer.loaded) return;
     const pos = Viewer.position();
-    const at = Library.updatePosition(positionKey, pos.page, { block: pos.block, offset: pos.offset });
+    const at = Library.updatePosition(positionKey, pos.page, { block: pos.block, offset: pos.offset }, Viewer.progress);
     if (at) lastSavedAt = at;
     Viewer.markPosition();
   }
