@@ -104,11 +104,22 @@ window.EpubLoader = (function () {
     const chapterPaths = new Set(spine.map((m) => m.path));
     const imageCache = new Map();
 
+    // Los capítulos son XHTML. Parseados como HTML, un ancla vacía <a id="cap03"/> (Gutenberg las pone al
+    // principio de cada capítulo) no se cierra y se traga el capítulo entero, que sale en color de enlace.
+    // Se prueba primero como XML y, si el fichero está mal formado, se cae al parser tolerante de HTML.
+    const parseChapter = (raw, type) => {
+      if (/xhtml|xml/i.test(type || "") || /^\s*<\?xml/.test(raw)) {
+        const x = new DOMParser().parseFromString(raw, "application/xhtml+xml");
+        if (x.documentElement && !x.getElementsByTagName("parsererror").length) return x;
+      }
+      return new DOMParser().parseFromString(raw, "text/html");
+    };
+
     const chapters = [];
     for (const item of spine) {
       const raw = await zip.file(item.path).async("text");
-      const doc = new DOMParser().parseFromString(raw, "text/html");
-      const body = doc.body || doc.documentElement;
+      const doc = parseChapter(raw, item.type);
+      const body = doc.body || doc.getElementsByTagName("body")[0] || doc.documentElement;
       await sanitize(body, {
         resolveImage: async (src) => {
           const p = resolvePath(item.path, src);
