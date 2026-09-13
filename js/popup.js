@@ -83,37 +83,75 @@ window.Popup = (function () {
     return body;
   }
 
+  // Códigos de categoría de los diccionarios (WikDict escribe "conjunction", Wiktionary "Conjunction") → clave de i18n,
+  // para que la etiqueta salga en el idioma de la interfaz y no en inglés.
+  const POS_ALIAS = { conjunction: "conj", preposition: "prep", pronoun: "pron", interjection: "int", determiner: "det", numeral: "num", phraseologicalUnit: "phrase" };
   function posLabel(p) {
-    const key = "pos." + p;
+    const key = "pos." + (POS_ALIAS[p] || p);
     const label = I18n.t(key);
     return label === key ? p : label;
   }
 
-  function renderOnline(res) {
+  // Resultado online: traducciones de Wiktionary por acepción (como las locales), la traducción de MyMemory
+  // (siempre en frases; en palabras solo si Wiktionary no dio nada) y las definiciones en inglés. Si no hay
+  // traducción de ningún tipo se dice claramente que lo que sigue es una definición en inglés.
+  function renderOnline(res, meta, isPhrase) {
     const wrap = document.createElement("div");
     wrap.className = "popup__online";
-    const label = document.createElement("div");
-    label.className = "popup__online-label";
-    label.textContent = I18n.t("popup.online");
-    wrap.appendChild(label);
-    if (res.translation) {
+    const label = (text) => {
+      const l = document.createElement("div");
+      l.className = "popup__online-label";
+      l.textContent = text;
+      wrap.appendChild(l);
+    };
+    const hasTranslation = res.senses.length > 0 || !!res.translation;
+    if (res.senses.length) {
+      label(I18n.t("popup.online") + " · Wiktionary");
+      wrap.appendChild(renderLocal({ entries: res.senses }));
+    }
+    if (res.translation && (isPhrase || !res.senses.length)) {
+      label(I18n.t("popup.online") + " · MyMemory");
       const p = document.createElement("div");
       p.className = "sense__trans popup__phrase";
       p.textContent = res.translation;
       wrap.appendChild(p);
     }
-    res.defs.forEach((block) => {
-      const div = document.createElement("div");
-      div.className = "sense";
-      const pos = document.createElement("span");
-      pos.className = "sense__pos";
-      pos.textContent = block.pos || "";
-      div.appendChild(pos);
-      block.defs.forEach((d) => { const p = document.createElement("p"); p.className = "sense__def"; p.textContent = d; div.appendChild(p); });
-      wrap.appendChild(div);
-    });
+    if (res.defs.length) {
+      label(hasTranslation ? "Wiktionary" : I18n.t("popup.defsOnly", { lang: I18n.t("lang." + meta.dst) }));
+      res.defs.forEach((block) => {
+        const div = document.createElement("div");
+        div.className = "sense";
+        const pos = document.createElement("span");
+        pos.className = "sense__pos";
+        pos.textContent = posLabel(block.pos || "");
+        div.appendChild(pos);
+        block.defs.forEach((d) => { const p = document.createElement("p"); p.className = "sense__def"; p.textContent = d; div.appendChild(p); });
+        wrap.appendChild(div);
+      });
+    }
     return wrap;
   }
+
+  // Lo que pasa al diccionario aprendido: las traducciones de Wiktionary tal cual o, si solo respondió
+  // MyMemory, su traducción cuando es una palabra o expresión corta (una frase entera no es una entrada).
+  function learnableEntries(res, isPhrase) {
+    if (isPhrase) return null;
+    if (res.senses.length) return res.senses;
+    if (res.translation && res.translation.split(/\s+/).length <= 3) {
+      const first = res.defs[0];
+      const sense = { t: [res.translation] };
+      if (first && first.defs[0]) sense.d = first.defs[0].slice(0, 300);
+      return [{ p: first && /^[a-zA-Z]{0,24}$/.test(first.pos) ? first.pos : "", s: [sense], o: "mymemory" }];
+    }
+    return null;
+  }
+
+  function wikiLink(src, lemma) {
+    const host = ({ es: "es.wiktionary.org", it: "it.wiktionary.org", de: "de.wiktionary.org" })[src] || "en.wiktionary.org";
+    return "https://" + host + "/wiki/" + encodeURIComponent(lemma);
+  }
+
+  function originName(o) { return ({ wiktionary: "Wiktionary", mymemory: "MyMemory" })[o] || ""; }
 
   function firstTranslation(res) {
     for (const e of res.entries) for (const s of e.s) if (s.t.length) return s.t.slice(0, 3).join(", ");
@@ -150,8 +188,9 @@ window.Popup = (function () {
       }
       body.appendChild(renderLocal(local));
       current.trans = firstTranslation(local);
-      const wikiHost = ({ es: "es.wiktionary.org", it: "it.wiktionary.org", de: "de.wiktionary.org" })[meta.src] || "en.wiktionary.org";
-      addFoot(foot, meta.name || I18n.t("popup.localSource"), "https://" + wikiHost + "/wiki/" + encodeURIComponent(local.lemma));
+      const origin = local.learned ? originName(local.entries[0] && local.entries[0].o) : "";
+      const source = local.learned ? I18n.t("popup.learnedSource") + (origin ? " · " + origin : "") : (meta.name || I18n.t("popup.localSource"));
+      addFoot(foot, source, wikiLink(meta.src, local.lemma));
     }
 
     if (Settings.get("speak") && !isPhrase && opts.autoSpeak !== false) speak(text);
@@ -178,9 +217,25 @@ window.Popup = (function () {
       const res = await Dictionary.lookupOnline(text, meta.src || "en", meta.dst || "es");
       if (id !== requestId) return;
       loading.remove();
-      body.appendChild(renderOnline(res));
-      if (!current.trans) current.trans = res.translation || (res.defs[0] && res.defs[0].defs[0]) || "";
-      addFoot(foot, "MyMemory · Wiktionary", null);
+      const viaLemma = !isPhrase && res.formOf ? Dictionary.lookup(res.formOf) : null;
+      if (viaLemma) {
+        // Flexión o grafía antigua de una palabra que sí está en el diccionario ("houses", "spake"): se enseña
+        // esa entrada y se aprende forma → lema para no volver a preguntar online.
+        $("popup-lemma").textContent = I18n.t("popup.formOf", { lemma: viaLemma.lemma });
+        $("popup-lemma").hidden = false;
+        body.appendChild(renderLocal(viaLemma));
+        current.lemma = viaLemma.lemma;
+        current.trans = firstTranslation(viaLemma);
+        updateSaveState();
+        addFoot(foot, meta.name || I18n.t("popup.localSource"), wikiLink(meta.src, viaLemma.lemma));
+        if (Dictionary.learn(text, null, viaLemma.lemma)) addFoot(foot, I18n.t("popup.learned"), null);
+      } else {
+        body.appendChild(renderOnline(res, meta, isPhrase));
+        if (!current.trans) current.trans = firstTranslation({ entries: res.senses }) || res.translation || (res.defs[0] && res.defs[0].defs[0]) || "";
+        addFoot(foot, "MyMemory · Wiktionary", null);
+        const entries = learnableEntries(res, isPhrase);
+        if (entries && Dictionary.learn(text, entries)) addFoot(foot, I18n.t("popup.learned"), null);
+      }
     } catch (err) {
       if (id !== requestId) return;
       loading.remove();

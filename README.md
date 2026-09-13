@@ -32,7 +32,11 @@ works by opening `index.html` straight from disk.
 - **Embedded dictionaries**: 18 language pairs built from WikDict, FreeDict,
   kaikki.org and CC-CEDICT, with rule-based lemmatization (houses → house,
   ginge → gehen, يكتب → كتب). If a word is missing, optional online lookup
-  (MyMemory and Wiktionary).
+  (MyMemory, plus Wiktionary definitions and translations for English words).
+  Inflections and old spellings Wiktionary knows ("spake" → speak) resolve to
+  the local entry, and whatever the online lookup finds is saved server-side
+  in a per-pair JSON (`dict-extra/<pair>.json` in the data folder, served by
+  `api.php?r=dict/extra`) and merged into the dictionary for every reader.
 - **Formats**: PDF (faithful page view or text view), EPUB with images, HTML
   and TXT.
 - **Library**: every book is saved with its cover and the exact spot you were

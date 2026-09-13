@@ -9,12 +9,15 @@
 //   GET  books                                { books }
 //   POST books/sync    { books: [...] }       incorpora los libros del dispositivo → { books } (todos)
 //   POST books/remove  { key, at }            borra un libro (lápida para los demás dispositivos)
+//   GET  dict/extra    ?pair=en-es             diccionario aprendido online del par: { entries, infl } (sin sesión)
+//   POST dict/learn    { pair, word, entries?, lemma? }  guarda una palabra resuelta online → { status } (sin sesión)
 //
 // Sesión: cookie HttpOnly. CSRF: toda petición que no sea GET exige la cabecera X-Requested-With
 // (un formulario de otra web no puede ponerla) y, si el navegador manda Origin, que coincida con el
 // Host. Las respuestas de error llevan { ok: false, error: "<código>" }.
 
 require_once __DIR__ . '/usuarios-lib.php';
+require_once __DIR__ . '/diccionario-lib.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -169,6 +172,44 @@ switch ($metodo . ' ' . $ruta) {
         $at = isset($cuerpo['at']) && is_numeric($cuerpo['at']) ? (int) $cuerpo['at'] : 0;
         usuarios_libro_borrar($db, $user['id'], $key, $at);
         api_responder(200, array('ok' => true));
+        break;
+
+    case 'GET dict/extra':
+        $pair = isset($_GET['pair']) ? (string) $_GET['pair'] : '';
+        $raw = dicc_leer_crudo($pair);
+        if ($raw === null) {
+            api_error(dicc_par_valido($pair) ? 500 : 400, 'par_invalido');
+        }
+        // Lo piden todos los lectores al cargar un diccionario: se revalida con ETag (304 sin cuerpo si no cambió).
+        $etag = '"' . md5($raw) . '"';
+        header('Cache-Control: no-cache');
+        header('ETag: ' . $etag);
+        if (isset($_SERVER['HTTP_IF_NONE_MATCH']) && trim($_SERVER['HTTP_IF_NONE_MATCH']) === $etag) {
+            http_response_code(304);
+            exit;
+        }
+        http_response_code(200);
+        echo $raw;
+        exit;
+
+    case 'POST dict/learn':
+        $ip = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
+        if (!usuarios_ratelimit($db, 'learn:' . hash('sha256', $ip), DICC_APRENDER_MAX_HORA, 3600)) {
+            api_error(429, 'demasiadas_altas');
+        }
+        $cuerpo = api_cuerpo();
+        $pair = isset($cuerpo['pair']) ? $cuerpo['pair'] : '';
+        $word = isset($cuerpo['word']) ? $cuerpo['word'] : '';
+        $entries = isset($cuerpo['entries']) ? $cuerpo['entries'] : null;
+        $lemma = isset($cuerpo['lemma']) ? $cuerpo['lemma'] : null;
+        $status = dicc_aprender($pair, $word, $entries, $lemma);
+        if ($status === 'invalido') {
+            api_error(400, 'palabra_invalida');
+        }
+        if ($status === 'error') {
+            api_error(500, 'sin_escritura');
+        }
+        api_responder(200, array('ok' => true, 'status' => $status));
         break;
 
     default:

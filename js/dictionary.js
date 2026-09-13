@@ -1,4 +1,4 @@
-/* Diccionarios: pares de idiomas, carga bajo demanda, lematización (inglés y español) y consulta local/online. */
+/* Diccionarios: pares de idiomas, carga bajo demanda, lematización, consulta local/online y diccionario aprendido online. */
 window.Dictionary = (function () {
   "use strict";
 
@@ -99,7 +99,7 @@ window.Dictionary = (function () {
 
   function register(id, obj) {
     if (!obj || !obj.entries) throw new Error("Diccionario sin campo 'entries'");
-    registry.set(id, { meta: obj.meta || {}, entries: obj.entries, infl: obj.infl || {} });
+    registry.set(id, { meta: obj.meta || {}, entries: obj.entries, infl: obj.infl || {}, learned: new Set() });
   }
 
   function injectScript(src) {
@@ -125,6 +125,7 @@ window.Dictionary = (function () {
     }
     active = registry.get(id);
     activeId = id;
+    loadExtras(id, active);
     listeners.forEach((fn) => fn(active.meta, id));
     return active.meta;
   }
@@ -139,6 +140,84 @@ window.Dictionary = (function () {
     activeId = id;
     listeners.forEach((fn) => fn(active.meta, id));
     return active.meta;
+  }
+
+  // ---------------------------------------------------------------- diccionario aprendido online
+  // Palabras que no estaban en dict/*.js y que se resolvieron online. Viven en tres sitios: en memoria
+  // (fundidas en el diccionario activo, el incrustado siempre gana), en localStorage (siguen ahí sin
+  // conexión o abriendo index.html desde disco) y, con servidor, en el JSON estático del par de la carpeta
+  // de datos (api.php?r=dict/extra), que se sirve a todos los lectores al cargar el diccionario.
+  const EXTRA_KEY = "pdfr.dictExtra.";
+  const EXTRA_LOCAL_MAX = 3000;
+  const hasServer = /^https?:$/.test(location.protocol);
+
+  function readExtraLocal(id) {
+    try {
+      const j = JSON.parse(localStorage.getItem(EXTRA_KEY + id) || "null");
+      return j && typeof j === "object" ? { entries: j.entries || {}, infl: j.infl || {} } : { entries: {}, infl: {} };
+    } catch (_) { return { entries: {}, infl: {} }; }
+  }
+  function writeExtraLocal(id, data) {
+    try {
+      const words = Object.keys(data.entries);
+      if (words.length > EXTRA_LOCAL_MAX) words.slice(0, words.length - EXTRA_LOCAL_MAX).forEach((w) => { delete data.entries[w]; });
+      localStorage.setItem(EXTRA_KEY + id, JSON.stringify(data));
+    } catch (_) { /* sin localStorage o sin sitio: lo aprendido sigue en memoria y en el servidor */ }
+  }
+  function mergeExtra(dict, data) {
+    Object.keys((data && data.entries) || {}).forEach((w) => {
+      if (dict.entries[w] || !Array.isArray(data.entries[w])) return;
+      dict.entries[w] = data.entries[w];
+      dict.learned.add(w);
+    });
+    Object.keys((data && data.infl) || {}).forEach((w) => {
+      if (dict.infl[w] || dict.entries[w] || typeof data.infl[w] !== "string") return;
+      dict.infl[w] = data.infl[w];
+    });
+  }
+  function loadExtras(id, dict) {
+    if (dict.extras) return;
+    dict.extras = true;
+    mergeExtra(dict, readExtraLocal(id));
+    if (!hasServer) return;
+    fetch("api.php?r=dict/extra&pair=" + encodeURIComponent(id), { credentials: "same-origin", cache: "no-cache" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (j) mergeExtra(dict, j); })
+      .catch(() => { /* sin servidor o sin red: queda lo local */ });
+  }
+
+  // Guarda una palabra resuelta online: sus entradas (mismo formato que dict/*.js) o, si es una flexión de
+  // una palabra que sí está, solo forma → lema. Devuelve true si era nueva.
+  function learn(word, entries, lemma) {
+    if (!active || !activeId || activeId.startsWith("custom:")) return false;
+    const w = normalize(word);
+    if (!w || /\s/.test(w)) return false;
+    const lem = lemma ? normalize(lemma) : "";
+    const withEntries = Array.isArray(entries) && entries.length > 0;
+    if (withEntries) {
+      if (active.entries[w]) return false;
+      active.entries[w] = entries;
+      active.learned.add(w);
+    } else if (lem && lem !== w) {
+      if (active.infl[w] || active.entries[w]) return false;
+      active.infl[w] = lem;
+    } else {
+      return false;
+    }
+    const local = readExtraLocal(activeId);
+    if (withEntries) local.entries[w] = entries; else local.infl[w] = lem;
+    writeExtraLocal(activeId, local);
+    if (hasServer) {
+      const body = { pair: activeId, word: w };
+      if (withEntries) body.entries = entries; else body.lemma = lem;
+      fetch("api.php?r=dict/learn", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "X-Requested-With": "Glosa", "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }).catch(() => { /* ya está en local; el servidor la recibirá otro día */ });
+    }
+    return true;
   }
 
   function normalize(word) {
@@ -400,7 +479,7 @@ window.Dictionary = (function () {
       const { c: cand, kind } = cands[i];
       const raw = active.entries[cand];
       if (!raw) continue;
-      let entries = raw.map((e) => ({ p: e.p || "", s: sortSenses(e.s) }));
+      let entries = raw.map((e) => ({ p: e.p || "", s: sortSenses(e.s || []), o: e.o || "" }));
       if (kind) entries = entries.filter((e) => e.p === kind).concat(entries.filter((e) => e.p !== kind));
       // "running" (adv, n) o "era" (n) son entradas propias, pero en un texto suelen ser
       // formas de un verbo ("run", "ser"): si la entrada no trae verbo y una flexión
@@ -410,45 +489,145 @@ window.Dictionary = (function () {
         const verb = verbForm && cands.slice(1).find((k) => (k.kind === "v" || active.infl[norm] === k.c) && (active.entries[k.c] || []).some((e) => e.p === "v"));
         if (verb) active.entries[verb.c].filter((e) => e.p === "v").forEach((e) => entries.push({ p: "v", s: sortSenses(e.s), lemma: verb.c }));
       }
-      return { word: norm, lemma: cand, entries, source: "local" };
+      return { word: norm, lemma: cand, entries, source: "local", learned: active.learned.has(cand) };
     }
     return null;
   }
 
   // ---------------------------------------------------------------- online (opcional)
+  // Tres fuentes en paralelo: MyMemory (traducción, también de frases) y, para palabras inglesas sueltas,
+  // Wiktionary: definiciones (API REST) y traducciones al idioma destino (wikitexto del artículo). Del HTML
+  // de las definiciones sale además el lema cuando la palabra es una flexión o una grafía antigua ("plural
+  // of house", "archaic spelling of …"): eso resuelve en local lo que el lematizador no sabía.
+  const WIKI_LANG = { es: "es", en: "en", it: "it", de: "de", ar: "ar", zh: "cmn" };
+  const WIKI_POS = {
+    noun: "n", "proper noun": "pn", verb: "v", adjective: "adj", adverb: "adv", preposition: "prep",
+    conjunction: "conj", pronoun: "pron", interjection: "int", determiner: "det", article: "article",
+    numeral: "num", number: "num", particle: "particle", phrase: "phrase", "prepositional phrase": "phrase",
+    prefix: "prefix", suffix: "suffix", proverb: "proverb", symbol: "symbol", contraction: "contraction",
+  };
+  const posCode = (name) => WIKI_POS[String(name || "").toLowerCase()] || "";
+  const FORM_OF = /\b(?:plural|singular|past|participle|present|tense|inflection|form|spelling|comparative|superlative|gerund|contraction|misspelling)\b/i;
+
   async function lookupOnline(text, src, dst) {
     const q = String(text).trim().slice(0, 300);
-    const result = { translation: null, defs: [] };
-    const jobs = [];
-
-    jobs.push(
-      fetch("https://api.mymemory.translated.net/get?q=" + encodeURIComponent(q) + "&langpair=" + src + "|" + dst)
-        .then((r) => (r.ok ? r.json() : null))
-        .then((j) => {
-          const t = j && j.responseData && j.responseData.translatedText;
-          if (t && t.trim().toLowerCase() !== q.toLowerCase() && !/^(?:QUERY LENGTH|MYMEMORY WARNING|PLEASE SELECT)/i.test(t)) result.translation = t;
-        })
-        .catch(() => {})
-    );
-
+    const result = { translation: null, senses: [], defs: [], formOf: null };
+    const jobs = [fetchMyMemory(q, src, dst).then((t) => { result.translation = t; })];
     if (src === "en" && !/\s/.test(q)) {
-      jobs.push(
-        fetch("https://en.wiktionary.org/api/rest_v1/page/definition/" + encodeURIComponent(q.toLowerCase()) + "?redirect=true")
-          .then((r) => (r.ok ? r.json() : null))
-          .then((j) => {
-            const list = (j && j.en) || [];
-            list.slice(0, 3).forEach((block) => {
-              const defs = (block.definitions || []).map((d) => stripHtml(d.definition)).filter(Boolean).slice(0, 3);
-              if (defs.length) result.defs.push({ pos: block.partOfSpeech, defs });
-            });
-          })
-          .catch(() => {})
-      );
+      jobs.push(fetchWiktionaryDefs(q).then((r) => { result.defs = r.defs; result.formOf = r.formOf; }));
+      if (dst !== "en" && WIKI_LANG[dst]) jobs.push(fetchWiktionaryTranslations(q, WIKI_LANG[dst], false).then((s) => { result.senses = s; }));
     }
-
     await Promise.all(jobs);
-    if (!result.translation && !result.defs.length) throw new Error("Sin resultados online");
+    if (!result.translation && !result.defs.length && !result.senses.length && !result.formOf) throw new Error("Sin resultados online");
     return result;
+  }
+
+  async function fetchMyMemory(q, src, dst) {
+    try {
+      const r = await fetch("https://api.mymemory.translated.net/get?q=" + encodeURIComponent(q) + "&langpair=" + src + "|" + dst);
+      const j = r.ok ? await r.json() : null;
+      const t = j && j.responseData && j.responseData.translatedText;
+      if (!t || t.trim().toLowerCase() === q.toLowerCase() || /^(?:QUERY LENGTH|MYMEMORY WARNING|PLEASE SELECT)/i.test(t)) return null;
+      return t.trim();
+    } catch (_) { return null; }
+  }
+
+  async function fetchWiktionaryDefs(q) {
+    const out = { defs: [], formOf: null };
+    try {
+      const r = await fetch("https://en.wiktionary.org/api/rest_v1/page/definition/" + encodeURIComponent(q.toLowerCase()) + "?redirect=true");
+      const j = r.ok ? await r.json() : null;
+      ((j && j.en) || []).slice(0, 3).forEach((block) => {
+        const defs = [];
+        (block.definitions || []).forEach((d) => {
+          const html = d.definition || "";
+          const t = stripHtml(html);
+          // Solo flexiones y grafías ("plural of", "simple past of", "archaic spelling of"); "synonym of" también
+          // lleva enlace de forma en Wiktionary pero no es la misma palabra.
+          const m = !out.formOf && FORM_OF.test(t) && /form-of-definition-link[\s\S]*?<a [^>]*>([^<]+)<\/a>/.exec(html);
+          if (m) { const lemma = normalize(m[1]); if (lemma && lemma !== q.toLowerCase()) out.formOf = lemma; }
+          if (t && defs.length < 3) defs.push(t);
+        });
+        if (defs.length) out.defs.push({ pos: posCode(block.partOfSpeech) || block.partOfSpeech || "", defs });
+      });
+    } catch (_) { /* sin red o sin artículo */ }
+    return out;
+  }
+
+  async function fetchWikitext(page) {
+    const r = await fetch("https://en.wiktionary.org/w/api.php?action=parse&prop=wikitext&format=json&formatversion=2&redirects=1&origin=*&page=" + encodeURIComponent(page));
+    const j = r.ok ? await r.json() : null;
+    return (j && j.parse && j.parse.wikitext) || "";
+  }
+  function englishSection(wikitext) {
+    const m = /^==English==[ \t]*\r?\n/m.exec(wikitext);
+    if (!m) return "";
+    const from = m.index + m[0].length;
+    const end = wikitext.slice(from).search(/\n==[^=]/);
+    return end < 0 ? wikitext.slice(from) : wikitext.slice(from, from + end);
+  }
+  function cleanWikiValue(s) {
+    const t = String(s || "")
+      .replace(/[​‎‏]/g, "")
+      .replace(/\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/g, "$1")
+      .replace(/\{\{[^}]*\}\}/g, "")
+      .replace(/'{2,}/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    return t && t.length <= 120 && !/[{}<>]/.test(t) ? t : "";
+  }
+
+  // Traducciones al idioma destino en el wikitexto inglés: {{t|es|casa}} / {{t+|es|casa|f}}, agrupadas por
+  // categoría (===Noun===) y glosa ({{trans-top|A building}}), en el mismo formato que dict/*.js. Los
+  // artículos grandes las tienen en la subpágina /translations; los cortos a veces remiten a otro artículo
+  // ({{trans-see|glosa|otro}}): un salto como mucho.
+  async function fetchWiktionaryTranslations(q, lang, hopped) {
+    let senses = [];
+    try {
+      const section = englishSection(await fetchWikitext(q));
+      if (!section) return senses;
+      senses = parseTranslations(section, lang);
+      if (!senses.length && /\{\{see translation subpage\|/.test(section)) senses = parseTranslations(englishSection(await fetchWikitext(q + "/translations")), lang);
+      if (!senses.length && !hopped) {
+        const see = /\{\{trans-see\|[^|}]*\|([^|}]+)/.exec(section);
+        if (see) senses = await fetchWiktionaryTranslations(see[1].trim(), lang, true);
+      }
+    } catch (_) { /* sin red o sin artículo */ }
+    return senses;
+  }
+  function parseTranslations(section, lang) {
+    const entries = [];
+    const tpl = new RegExp("\\{\\{tt?\\+?\\|" + lang + "\\|([^}|]+)", "g");
+    let pos = "", gloss = "", sense = null, skipping = false;
+    section.split("\n").forEach((line) => {
+      const h = /^(={3,5})\s*(.+?)\s*\1\s*$/.exec(line);
+      if (h) { if (WIKI_POS[h[2].toLowerCase()] !== undefined) pos = h[2]; sense = null; return; }
+      if (/^\{\{checktrans-top/.test(line)) { skipping = true; sense = null; return; } // traducciones sin revisar
+      const top = /^\{\{trans-top(?:-also|-see)?\|(.*?)\}\}/.exec(line);
+      if (top) {
+        skipping = false; sense = null;
+        gloss = cleanWikiValue(top[1].split("|").filter((a) => !/^\w+=/.test(a)).shift() || "");
+        return;
+      }
+      if (/^\{\{trans-bottom/.test(line)) { skipping = false; sense = null; gloss = ""; return; }
+      if (skipping) return;
+      tpl.lastIndex = 0;
+      const found = [];
+      let m;
+      while ((m = tpl.exec(line))) { const t = cleanWikiValue(m[1]); if (t && !found.includes(t)) found.push(t); }
+      if (!found.length) return;
+      if (!sense) {
+        const code = posCode(pos);
+        let entry = entries.find((e) => e.p === code);
+        if (!entry) { entry = { p: code, s: [], o: "wiktionary" }; entries.push(entry); }
+        if (entry.s.length >= 6) return;
+        sense = { t: [] };
+        if (gloss) sense.d = gloss;
+        entry.s.push(sense);
+      }
+      found.forEach((t) => { if (sense.t.length < 10 && !sense.t.includes(t)) sense.t.push(t); });
+    });
+    return entries.filter((e) => e.s.length).slice(0, 4);
   }
 
   function stripHtml(html) {
@@ -482,5 +661,5 @@ window.Dictionary = (function () {
     return best[1] > second[1] * 1.3 ? best[0] : null;
   }
 
-  return { PAIRS, pairs, use, useCustom, currentId, meta, onChange, normalize, normalizeAr, toSimplified, segmentAt, lookup, lookupOnline, detectLanguage };
+  return { PAIRS, pairs, use, useCustom, currentId, meta, onChange, normalize, normalizeAr, toSimplified, segmentAt, lookup, lookupOnline, learn, detectLanguage };
 })();
