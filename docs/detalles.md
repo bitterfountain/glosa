@@ -122,8 +122,8 @@ Se cargan bajo demanda (solo el par activo) desde `dict/`:
 | `es-en.js` | 108.462 | 14 MB | kaikki.org (Wiktionary inglés, entradas en español) |
 | `en-it.js` | 47.921 | 8,2 MB | WikDict eng-ita |
 | `en-de.js` | 62.561 | 11,6 MB | WikDict eng-deu |
-| `es-it.js` | 10.353 | 1,1 MB | WikDict spa-ita |
-| `es-de.js` | 11.185 | 1,3 MB | WikDict spa-deu |
+| `es-it.js` | 79.600 (+190.895 flexiones) | 15,9 MB | WikDict spa-ita (10.353 directos) + pivote es→en→it (`tools/build_pivot.py --merge`) |
+| `es-de.js` | 82.051 (+195.307 flexiones) | 17,1 MB | WikDict spa-deu (11.185 directos) + pivote es→en→de (`tools/build_pivot.py --merge`) |
 | `it-es.js` | 13.809 | 1,5 MB | WikDict ita-spa + FreeDict ita-spa 2025.11.23 |
 | `it-en.js` | 28.266 | 3,5 MB | WikDict ita-eng + FreeDict ita-eng 2025.11.23 |
 | `it-de.js` | 8.032 | 1,0 MB | WikDict ita-deu |
@@ -141,10 +141,20 @@ Se cargan bajo demanda (solo el par activo) desde `dict/`:
   `https://download.wikdict.com/dictionaries/tei/including_reverse/<src>-<dst>.tei`
   (códigos de tres letras: eng, spa, ita, deu). **FreeDict** (GPL):
   `https://download.freedict.org/dictionaries/<par>/<versión>/freedict-<par>-<versión>.src.tar.xz`.
-  Los pares con italiano o español como origen son cortos porque las fuentes
-  lo son (a `ita-eng` le falta hasta *parlare*); la consulta online cubre el
-  resto. Mejorarlos pasaría por los volcados de kaikki.org del Wiktionary
-  inglés para italiano y alemán, como ya se hizo con `es-en.js`.
+  Los pares con italiano como origen son cortos porque las fuentes lo son (a
+  `ita-eng` le falta hasta *parlare*); la consulta online cubre el resto.
+  Mejorarlos pasaría por el volcado de kaikki.org del Wiktionary inglés para
+  italiano, como ya se hizo con `es-en.js`.
+- **Español → italiano / alemán**: WikDict spa-ita y spa-deu solo traen 10-11k lemas
+  (en el primer capítulo del Quijote resolvían la mitad de las palabras). Desde
+  2026-09-20 se construyen con `tools/build_pivot.py --merge`: las entradas directas
+  de WikDict van primero tal cual y el **pivote** español → inglés (glosas de
+  `es-en.js`) → italiano/alemán (`en-it.js`, `en-de.js`) rellena los lemas que
+  faltan y completa los que traen menos de tres acepciones (spa-deu daba *tener*
+  solo como *müssen*). Con eso resuelven el 97 % del mismo capítulo y heredan las
+  flexiones irregulares de `es-en.js`. El pivote busca primero la misma categoría
+  gramatical en el segundo diccionario (*querer* → *love* verbo → *amare*, no
+  *amore*); la glosa inglesa queda como definición (`d`).
 - **Árabe como destino** (árabe estándar, no dariya): `en-ar.js` viene de FreeDict
   eng-ara tal cual (sin categorías gramaticales). `es-ar.js` lo construye
   `tools/build_es_ar.py` con dos fuentes: las traducciones directas al árabe del
@@ -199,6 +209,10 @@ python tools/build_kaikki.py tools/kaikki-spanish.jsonl.gz -o dict/es-en.js
 python tools/build_dict.py tools/wikdict-eng-ita.tei -o dict/en-it.js --src en --dst it --name "English → Italiano"
 python tools/build_dict.py tools/wikdict-deu-spa.tei tools/deu-spa/deu-spa.tei -o dict/de-es.js --src de --dst es --name "Deutsch → Español" --prune-infl de
 python tools/build_dict.py tools/eng-ara/eng-ara.tei -o dict/en-ar.js --src en --dst ar --name "English → العربية"
+python tools/build_dict.py tools/wikdict-spa-ita.tei -o tools/es-it-wikdict.js --src es --dst it --name "Español → Italiano"
+python tools/build_pivot.py dict/es-en.js dict/en-it.js --merge tools/es-it-wikdict.js -o dict/es-it.js --name "Español → Italiano"
+python tools/build_dict.py tools/wikdict-spa-deu.tei -o tools/es-de-wikdict.js --src es --dst de --name "Español → Deutsch"
+python tools/build_pivot.py dict/es-en.js dict/en-de.js --merge tools/es-de-wikdict.js -o dict/es-de.js --name "Español → Deutsch"
 python tools/build_es_ar.py tools/kaikki-eswiktionary-espanol.jsonl.gz -o dict/es-ar.js
 python tools/build_kaikki_ar.py tools/kaikki-arabic.jsonl.gz tools/ara-eng/ara-eng.tei -o dict/ar-en.js
 python tools/build_pivot.py dict/ar-en.js dict/en-es.js -o dict/ar-es.js --name "العربية → Español"
@@ -248,8 +262,13 @@ está bloqueado en `file://`.
 ### Consulta online (opcional, activada por defecto)
 
 Si la palabra no está en el diccionario local, o al seleccionar una frase, se
-consulta **MyMemory** (traducción) y **Wiktionary** (definiciones). Solo se envía
-el texto consultado. Se desactiva en Ajustes.
+consulta **MyMemory** (traducción) y el **Wiktionary inglés**: definiciones en
+inglés por la API REST para palabras en cualquiera de los idiomas de lectura
+(la entrada de *anduvimos* está bajo la clave `es`) y, si la palabra es inglesa,
+traducciones al idioma destino sacadas del wikitexto. Cuando la definición es
+"plural of house" o "first-person plural preterite of andar", el lema enlazado
+se busca en el diccionario local y se aprende forma → lema. Solo se envía el
+texto consultado. Se desactiva en Ajustes.
 
 ## Estructura
 

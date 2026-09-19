@@ -3,7 +3,7 @@ window.Dictionary = (function () {
   "use strict";
 
   // Súbelo al regenerar un diccionario: los ficheros de dict/ se sirven con caché larga.
-  const DICT_VERSION = "2026-08-27.2";
+  const DICT_VERSION = "2026-09-20.1";
 
   const PAIRS = [
     { id: "en-es", name: "English → Español", src: "en", dst: "es", file: "dict/en-es.js" },
@@ -495,11 +495,14 @@ window.Dictionary = (function () {
   }
 
   // ---------------------------------------------------------------- online (opcional)
-  // Tres fuentes en paralelo: MyMemory (traducción, también de frases) y, para palabras inglesas sueltas,
-  // Wiktionary: definiciones (API REST) y traducciones al idioma destino (wikitexto del artículo). Del HTML
-  // de las definiciones sale además el lema cuando la palabra es una flexión o una grafía antigua ("plural
-  // of house", "archaic spelling of …"): eso resuelve en local lo que el lematizador no sabía.
+  // Tres fuentes en paralelo: MyMemory (traducción, también de frases) y, para palabras sueltas, el
+  // Wiktionary inglés: definiciones en inglés (API REST, que tiene entradas de cualquier idioma: la de
+  // "anduvimos" está bajo la clave "es") y, si la palabra es inglesa, traducciones al idioma destino
+  // (wikitexto del artículo). Del HTML de las definiciones sale además el lema cuando la palabra es una
+  // flexión o una grafía antigua ("plural of house", "first-person plural preterite of andar", "archaic
+  // spelling of …"): eso resuelve en local lo que el lematizador no sabía.
   const WIKI_LANG = { es: "es", en: "en", it: "it", de: "de", ar: "ar", zh: "cmn" };
+  const WIKI_REST_LANG = { es: "es", en: "en", it: "it", de: "de", ar: "ar" }; // clave del idioma en la API REST
   const WIKI_POS = {
     noun: "n", "proper noun": "pn", verb: "v", adjective: "adj", adverb: "adv", preposition: "prep",
     conjunction: "conj", pronoun: "pron", interjection: "int", determiner: "det", article: "article",
@@ -507,16 +510,14 @@ window.Dictionary = (function () {
     prefix: "prefix", suffix: "suffix", proverb: "proverb", symbol: "symbol", contraction: "contraction",
   };
   const posCode = (name) => WIKI_POS[String(name || "").toLowerCase()] || "";
-  const FORM_OF = /\b(?:plural|singular|past|participle|present|tense|inflection|form|spelling|comparative|superlative|gerund|contraction|misspelling)\b/i;
+  const FORM_OF = /\b(?:plural|singular|past|participle|present|preterite|imperfect|future|conditional|indicative|subjunctive|imperative|tense|inflection|form|spelling|comparative|superlative|gerund|contraction|misspelling|feminine|masculine)\b/i;
 
   async function lookupOnline(text, src, dst) {
     const q = String(text).trim().slice(0, 300);
     const result = { translation: null, senses: [], defs: [], formOf: null };
     const jobs = [fetchMyMemory(q, src, dst).then((t) => { result.translation = t; })];
-    if (src === "en" && !/\s/.test(q)) {
-      jobs.push(fetchWiktionaryDefs(q).then((r) => { result.defs = r.defs; result.formOf = r.formOf; }));
-      if (dst !== "en" && WIKI_LANG[dst]) jobs.push(fetchWiktionaryTranslations(q, WIKI_LANG[dst], false).then((s) => { result.senses = s; }));
-    }
+    if (WIKI_REST_LANG[src] && !/\s/.test(q)) jobs.push(fetchWiktionaryDefs(q, WIKI_REST_LANG[src]).then((r) => { result.defs = r.defs; result.formOf = r.formOf; }));
+    if (src === "en" && !/\s/.test(q) && dst !== "en" && WIKI_LANG[dst]) jobs.push(fetchWiktionaryTranslations(q, WIKI_LANG[dst], false).then((s) => { result.senses = s; }));
     await Promise.all(jobs);
     if (!result.translation && !result.defs.length && !result.senses.length && !result.formOf) throw new Error("Sin resultados online");
     return result;
@@ -532,12 +533,12 @@ window.Dictionary = (function () {
     } catch (_) { return null; }
   }
 
-  async function fetchWiktionaryDefs(q) {
+  async function fetchWiktionaryDefs(q, lang) {
     const out = { defs: [], formOf: null };
     try {
       const r = await fetch("https://en.wiktionary.org/api/rest_v1/page/definition/" + encodeURIComponent(q.toLowerCase()) + "?redirect=true");
       const j = r.ok ? await r.json() : null;
-      ((j && j.en) || []).slice(0, 3).forEach((block) => {
+      ((j && j[lang || "en"]) || []).slice(0, 3).forEach((block) => {
         const defs = [];
         (block.definitions || []).forEach((d) => {
           const html = d.definition || "";
