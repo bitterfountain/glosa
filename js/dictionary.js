@@ -3,7 +3,7 @@ window.Dictionary = (function () {
   "use strict";
 
   // Súbelo al regenerar un diccionario: los ficheros de dict/ se sirven con caché larga.
-  const DICT_VERSION = "2026-09-20.2";
+  const DICT_VERSION = "2026-09-20.3";
 
   const PAIRS = [
     { id: "en-es", name: "English → Español", src: "en", dst: "es", file: "dict/en-es.js" },

@@ -127,9 +127,9 @@ Se cargan bajo demanda (solo el par activo) desde `dict/`:
 | `it-es.js` | 128.959 (+56.548 flexiones) | 22 MB | WikDict ita-spa + FreeDict ita-spa (13.809 directos) + pivote it→en→es (`tools/build_pivot.py --merge`) |
 | `it-en.js` | 158.880 (+78.089 flexiones) | 17,9 MB | WikDict ita-eng + FreeDict ita-eng (28.266 directos) + kaikki.org (Wiktionary inglés, entradas en italiano) |
 | `it-de.js` | 128.137 (+56.089 flexiones) | 24 MB | WikDict ita-deu (8.032 directos) + pivote it→en→de (`tools/build_pivot.py --merge`) |
-| `de-es.js` | 36.076 (+43.246 flexiones) | 6,5 MB | WikDict deu-spa + FreeDict deu-spa 2025.11.23 |
+| `de-es.js` | 60.351 (+68.700 flexiones) | 15,9 MB | WikDict deu-spa + FreeDict deu-spa (36.076 directos) + pivote de→en→es (`tools/build_pivot.py --merge`) |
 | `de-en.js` | 63.756 (+71.565 flexiones) | 11,6 MB | WikDict deu-eng |
-| `de-it.js` | 30.839 (+40.208 flexiones) | 5,6 MB | WikDict deu-ita |
+| `de-it.js` | 56.279 (+67.036 flexiones) | 14,6 MB | WikDict deu-ita (30.839 directos) + pivote de→en→it (`tools/build_pivot.py --merge`) |
 | `es-ar.js` | 80.216 (+198.097 flexiones) | 13,9 MB | Wiktionary español (1.622 directos) + pivote es→en→ar |
 | `en-ar.js` | 87.424 | 3,7 MB | FreeDict eng-ara 0.6.3 |
 | `ar-en.js` | 41.890 (+240.084 flexiones) | 7,6 MB | kaikki.org (Wiktionary, árabe) + FreeDict ara-eng 0.6.3 |
@@ -164,6 +164,9 @@ Se cargan bajo demanda (solo el par activo) desde `dict/`:
   `--merge` sobre los WikDict directos. En el arranque de *I promessi sposi* más un texto
   moderno pasan del 75 / 65 / 50 % al 97 / 96 / 96 %; lo que falla son apócopes poéticas
   (*vien*, *prender*, *lascian*).
+- **Alemán → español / italiano** (2026-09-20): mismo pivote con `--merge` desde `de-en.js`
+  (WikDict deu-eng, 64k lemas y 72k flexiones, que heredan). Del 91 / 86 % al 95 / 95 % en
+  el arranque de *Die Verwandlung* más un texto moderno.
 - **Árabe como destino** (árabe estándar, no dariya): `en-ar.js` viene de FreeDict
   eng-ara tal cual (sin categorías gramaticales). `es-ar.js` lo construye
   `tools/build_es_ar.py` con dos fuentes: las traducciones directas al árabe del
@@ -216,7 +219,10 @@ Regenerar (los ficheros fuente viven en `tools/`, que no se sube):
 python tools/build_dict.py tools/wikdict-eng-spa.tei tools/eng-spa/eng-spa.tei -o dict/en-es.js --src en --dst es
 python tools/build_kaikki.py tools/kaikki-spanish.jsonl.gz -o dict/es-en.js
 python tools/build_dict.py tools/wikdict-eng-ita.tei -o dict/en-it.js --src en --dst it --name "English → Italiano"
-python tools/build_dict.py tools/wikdict-deu-spa.tei tools/deu-spa/deu-spa.tei -o dict/de-es.js --src de --dst es --name "Deutsch → Español" --prune-infl de
+python tools/build_dict.py tools/wikdict-deu-spa.tei tools/deu-spa/deu-spa.tei -o tools/de-es-wikdict.js --src de --dst es --name "Deutsch → Español" --prune-infl de
+python tools/build_pivot.py dict/de-en.js dict/en-es.js --merge tools/de-es-wikdict.js -o dict/de-es.js --name "Deutsch → Español"
+python tools/build_dict.py tools/wikdict-deu-ita.tei -o tools/de-it-wikdict.js --src de --dst it --name "Deutsch → Italiano" --prune-infl de
+python tools/build_pivot.py dict/de-en.js dict/en-it.js --merge tools/de-it-wikdict.js -o dict/de-it.js --name "Deutsch → Italiano"
 python tools/build_dict.py tools/eng-ara/eng-ara.tei -o dict/en-ar.js --src en --dst ar --name "English → العربية"
 python tools/build_dict.py tools/wikdict-ita-eng.tei tools/ita-eng/ita-eng.tei -o tools/it-en-wikdict.js --src it --dst en --name "Italiano → English"
 python tools/build_kaikki.py tools/kaikki-italian.jsonl.gz --lang it --merge tools/it-en-wikdict.js -o dict/it-en.js
