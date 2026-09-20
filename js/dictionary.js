@@ -3,7 +3,7 @@ window.Dictionary = (function () {
   "use strict";
 
   // Súbelo al regenerar un diccionario: los ficheros de dict/ se sirven con caché larga.
-  const DICT_VERSION = "2026-09-20.1";
+  const DICT_VERSION = "2026-09-20.2";
 
   const PAIRS = [
     { id: "en-es", name: "English → Español", src: "en", dst: "es", file: "dict/en-es.js" },
@@ -475,6 +475,8 @@ window.Dictionary = (function () {
     const norm = normalize(word);
     if (!norm) return null;
     const cands = candidates(norm);
+    // Los lematizadores descartan candidatos de una letra; la palabra en sí ("y", "a", "e", "i") sí se busca.
+    if (norm.length === 1 && !cands.some((k) => k.c === norm)) cands.unshift({ c: norm, kind: "" });
     for (let i = 0; i < cands.length; i++) {
       const { c: cand, kind } = cands[i];
       const raw = active.entries[cand];

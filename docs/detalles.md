@@ -124,9 +124,9 @@ Se cargan bajo demanda (solo el par activo) desde `dict/`:
 | `en-de.js` | 62.561 | 11,6 MB | WikDict eng-deu |
 | `es-it.js` | 79.600 (+190.895 flexiones) | 15,9 MB | WikDict spa-ita (10.353 directos) + pivote es→en→it (`tools/build_pivot.py --merge`) |
 | `es-de.js` | 82.051 (+195.307 flexiones) | 17,1 MB | WikDict spa-deu (11.185 directos) + pivote es→en→de (`tools/build_pivot.py --merge`) |
-| `it-es.js` | 13.809 | 1,5 MB | WikDict ita-spa + FreeDict ita-spa 2025.11.23 |
-| `it-en.js` | 28.266 | 3,5 MB | WikDict ita-eng + FreeDict ita-eng 2025.11.23 |
-| `it-de.js` | 8.032 | 1,0 MB | WikDict ita-deu |
+| `it-es.js` | 128.959 (+56.548 flexiones) | 22 MB | WikDict ita-spa + FreeDict ita-spa (13.809 directos) + pivote it→en→es (`tools/build_pivot.py --merge`) |
+| `it-en.js` | 158.880 (+78.089 flexiones) | 17,9 MB | WikDict ita-eng + FreeDict ita-eng (28.266 directos) + kaikki.org (Wiktionary inglés, entradas en italiano) |
+| `it-de.js` | 128.137 (+56.089 flexiones) | 24 MB | WikDict ita-deu (8.032 directos) + pivote it→en→de (`tools/build_pivot.py --merge`) |
 | `de-es.js` | 36.076 (+43.246 flexiones) | 6,5 MB | WikDict deu-spa + FreeDict deu-spa 2025.11.23 |
 | `de-en.js` | 63.756 (+71.565 flexiones) | 11,6 MB | WikDict deu-eng |
 | `de-it.js` | 30.839 (+40.208 flexiones) | 5,6 MB | WikDict deu-ita |
@@ -141,10 +141,8 @@ Se cargan bajo demanda (solo el par activo) desde `dict/`:
   `https://download.wikdict.com/dictionaries/tei/including_reverse/<src>-<dst>.tei`
   (códigos de tres letras: eng, spa, ita, deu). **FreeDict** (GPL):
   `https://download.freedict.org/dictionaries/<par>/<versión>/freedict-<par>-<versión>.src.tar.xz`.
-  Los pares con italiano como origen son cortos porque las fuentes lo son (a
-  `ita-eng` le falta hasta *parlare*); la consulta online cubre el resto.
-  Mejorarlos pasaría por el volcado de kaikki.org del Wiktionary inglés para
-  italiano, como ya se hizo con `es-en.js`.
+  Los TEI con italiano como origen son cortos (a `ita-eng` le falta hasta
+  *parlare*): por eso `it-en.js` se completa con kaikki.org (abajo).
 - **Español → italiano / alemán**: WikDict spa-ita y spa-deu solo traen 10-11k lemas
   (en el primer capítulo del Quijote resolvían la mitad de las palabras). Desde
   2026-09-20 se construyen con `tools/build_pivot.py --merge`: las entradas directas
@@ -155,6 +153,17 @@ Se cargan bajo demanda (solo el par activo) desde `dict/`:
   flexiones irregulares de `es-en.js`. El pivote busca primero la misma categoría
   gramatical en el segundo diccionario (*querer* → *love* verbo → *amare*, no
   *amore*); la glosa inglesa queda como definición (`d`).
+- **Italiano como idioma de lectura** (2026-09-20): `it-en.js` lo construye
+  `tools/build_kaikki.py --lang it --merge` con el volcado de kaikki.org del Wiktionary
+  inglés para italiano (`kaikki.org/dictionary/Italian/`, 74 MB, 624k líneas): las
+  traducciones directas de WikDict + FreeDict van primero y las glosas de kaikki rellenan
+  el resto (159k lemas, 78k flexiones irregulares; las regulares las deduce el lematizador
+  italiano del JS, replicado en Python en ese script). kaikki a veces escribe el lema de una
+  flexión como "avere and (obsolete) havere": se recorta a la primera palabra, si no *ho*,
+  *hai* y *hanno* se pierden. `it-es.js` e `it-de.js` salen por pivote it→en→es/de con
+  `--merge` sobre los WikDict directos. En el arranque de *I promessi sposi* más un texto
+  moderno pasan del 75 / 65 / 50 % al 97 / 96 / 96 %; lo que falla son apócopes poéticas
+  (*vien*, *prender*, *lascian*).
 - **Árabe como destino** (árabe estándar, no dariya): `en-ar.js` viene de FreeDict
   eng-ara tal cual (sin categorías gramaticales). `es-ar.js` lo construye
   `tools/build_es_ar.py` con dos fuentes: las traducciones directas al árabe del
@@ -209,6 +218,12 @@ python tools/build_kaikki.py tools/kaikki-spanish.jsonl.gz -o dict/es-en.js
 python tools/build_dict.py tools/wikdict-eng-ita.tei -o dict/en-it.js --src en --dst it --name "English → Italiano"
 python tools/build_dict.py tools/wikdict-deu-spa.tei tools/deu-spa/deu-spa.tei -o dict/de-es.js --src de --dst es --name "Deutsch → Español" --prune-infl de
 python tools/build_dict.py tools/eng-ara/eng-ara.tei -o dict/en-ar.js --src en --dst ar --name "English → العربية"
+python tools/build_dict.py tools/wikdict-ita-eng.tei tools/ita-eng/ita-eng.tei -o tools/it-en-wikdict.js --src it --dst en --name "Italiano → English"
+python tools/build_kaikki.py tools/kaikki-italian.jsonl.gz --lang it --merge tools/it-en-wikdict.js -o dict/it-en.js
+python tools/build_dict.py tools/wikdict-ita-spa.tei tools/ita-spa/ita-spa.tei -o tools/it-es-wikdict.js --src it --dst es --name "Italiano → Español"
+python tools/build_pivot.py dict/it-en.js dict/en-es.js --merge tools/it-es-wikdict.js -o dict/it-es.js --name "Italiano → Español"
+python tools/build_dict.py tools/wikdict-ita-deu.tei -o tools/it-de-wikdict.js --src it --dst de --name "Italiano → Deutsch"
+python tools/build_pivot.py dict/it-en.js dict/en-de.js --merge tools/it-de-wikdict.js -o dict/it-de.js --name "Italiano → Deutsch"
 python tools/build_dict.py tools/wikdict-spa-ita.tei -o tools/es-it-wikdict.js --src es --dst it --name "Español → Italiano"
 python tools/build_pivot.py dict/es-en.js dict/en-it.js --merge tools/es-it-wikdict.js -o dict/es-it.js --name "Español → Italiano"
 python tools/build_dict.py tools/wikdict-spa-deu.tei -o tools/es-de-wikdict.js --src es --dst de --name "Español → Deutsch"
