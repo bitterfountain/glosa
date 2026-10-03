@@ -394,7 +394,11 @@ window.App = (function () {
     Auth.init();
     { const p = Dictionary.PAIRS.find((x) => x.id === Settings.get("pair")); document.body.dataset.dst = p ? p.dst : ""; document.body.dataset.src = p ? p.src : ""; }
     await usePair(Settings.get("pair"));
-    if (!Settings.get("langsChosen")) Langs.show({ firstRun: true });
+    // Enlace al catálogo de un idioma (#catalog/eu): la primera vez, antes se eligen los idiomas con el del
+    // catálogo ya marcado como idioma de lectura, y al cerrar ese popup se abre el catálogo.
+    const link = Catalog.linkTarget();
+    if (!Settings.get("langsChosen")) Langs.show({ firstRun: true, src: link && link.lang, onClose: link ? () => Catalog.openFromHash() : null });
+    else if (link) Catalog.openFromHash();
   }
 
   document.addEventListener("DOMContentLoaded", init);

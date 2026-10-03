@@ -49,6 +49,11 @@ Referencia técnica del proyecto. La presentación y el uso están en el
   las subpáginas enlazadas (hasta 60 capítulos, 4 descargas en paralelo), se limpian
   tablas, notas y enlaces, y se monta un HTML que abre `textdoc.js` como cualquier
   libro (y queda en la biblioteca).
+  **Enlaces directos al catálogo de un idioma**: `/#catalog/<idioma>` (`#catalog/eu`, `#catalog/ar`...) y
+  `/#catalog/<idioma>/beginners` con el filtro «Infantil y principiantes». La dirección cambia sola al abrir
+  el catálogo, cambiar de idioma o de filtro (y se limpia al cerrarlo), y el botón del enlace lo copia (en el
+  móvil abre el menú de compartir del sistema). La primera vez que alguien entra por un enlace ve antes el
+  popup de idiomas con el del catálogo ya marcado como idioma de lectura; al cerrarlo se abre el catálogo.
 - **Móvil** (≤ 980 px): la barra se reduce a logo, título del libro abierto
   con el % leído y su barrita de progreso, y un botón hamburguesa; abrir, par
   de idiomas,

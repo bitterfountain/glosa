@@ -24,6 +24,7 @@ window.Langs = (function () {
 
   let srcSel = null;   // selección provisional dentro del popup
   let dstSel = null;
+  let onClosed = null; // opts.onClose de show(): lo que toca hacer al cerrar (p. ej. abrir el catálogo de un enlace)
 
   function sources() { return [...new Set(Dictionary.PAIRS.filter((p) => !p.custom).map((p) => p.src))]; }
   function targets() { return [...new Set(Dictionary.PAIRS.filter((p) => !p.custom).map((p) => p.dst))]; }
@@ -108,12 +109,14 @@ window.Langs = (function () {
     syncPicker();
   }
 
-  // Abre el popup. Si el lector aún no ha elegido, el destino sale del navegador.
+  // Abre el popup. Si el lector aún no ha elegido, el destino sale del navegador. opts.src preselecciona el
+  // idioma de lectura (el de un enlace al catálogo) y opts.onClose se llama al cerrarlo de cualquier forma.
   function show(opts) {
     opts = opts || {};
     const cur = currentPair();
-    srcSel = cur.src;
+    srcSel = opts.src && sources().includes(opts.src) ? opts.src : cur.src;
     dstSel = cur.dst;
+    onClosed = opts.onClose || null;
     const note = $("langs-note");
     note.hidden = true;
     if (opts.firstRun) {
@@ -125,13 +128,19 @@ window.Langs = (function () {
       }
       if (srcSel === dstSel) srcSel = sources().find((s) => s !== dstSel) || srcSel;
     }
+    if (!pairFor(srcSel, dstSel)) dstSel = targets().find((d) => pairFor(srcSel, d)) || dstSel;
     renderPicker();
     if (window.Popup) Popup.hide();
     $("langs-modal").hidden = false;
     $("langs-ok").focus();
   }
 
-  function close() { $("langs-modal").hidden = true; }
+  function close() {
+    $("langs-modal").hidden = true;
+    const fn = onClosed;
+    onClosed = null;
+    if (fn) fn();
+  }
   function isOpen() { return !$("langs-modal").hidden; }
 
   function confirm() {

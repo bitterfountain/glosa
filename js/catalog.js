@@ -414,6 +414,7 @@ window.Catalog = (function () {
     const hasWs = SOURCES[lang].wikisource || beginnerBooks(lang).some((b) => b.ws);
     $("catalog-credit").textContent = t(SOURCES[lang].wikisource ? "catalog.credit.ws" + (lang === "ar" ? "" : "." + lang) : hasWs ? "catalog.credit.mixed" : "catalog.credit");
     $("catalog-grid").classList.toggle("books--rtl", lang === "ar");
+    if (!$("catalog-modal").hidden) syncHash();
   }
 
   // opts.beginners: abrir con el filtro "Infantil y principiantes" puesto.
@@ -424,6 +425,7 @@ window.Catalog = (function () {
     const modal = $("catalog-modal");
     modal.hidden = false;
     syncHeader();
+    syncHash();
     $("catalog-grid").replaceChildren();
     $("catalog-count").textContent = "";
     const status = $("catalog-status");
@@ -454,6 +456,42 @@ window.Catalog = (function () {
 
   function close() {
     $("catalog-modal").hidden = true;
+    if (/^#catalog\//.test(location.hash)) history.replaceState(null, "", location.pathname + location.search);
+  }
+
+  // ---------------------------------------------------------------- enlaces directos
+  // #catalog/<idioma> abre el catálogo de ese idioma y #catalog/<idioma>/beginners, con el filtro
+  // "Infantil y principiantes": la dirección cambia al abrir el catálogo, así que se comparte tal cual.
+  function hashFor(l, beginners) { return "#catalog/" + l + (beginners ? "/beginners" : ""); }
+  function linkFor(l, beginners) { return location.origin + location.pathname + hashFor(l, beginners); }
+  function parseHash() {
+    const m = /^#catalog\/([a-z]{2})(\/beginners)?$/.exec(location.hash);
+    return m && SOURCES[m[1]] ? { lang: m[1], beginners: !!m[2] } : null;
+  }
+  function syncHash() {
+    const h = hashFor(lang, levelOnly);
+    if (location.hash !== h) history.replaceState(null, "", location.pathname + location.search + h);
+  }
+  // Al arrancar y cuando cambia la dirección: si es un enlace al catálogo, lo abre.
+  function openFromHash() {
+    const target = parseHash();
+    if (target) show(target.lang, { beginners: target.beginners });
+    return !!target;
+  }
+  function linkTarget() { return parseHash(); }
+
+  // Botón "Compartir enlace": en el móvil, el menú de compartir del sistema; si no, al portapapeles.
+  async function shareLink() {
+    const url = linkFor(lang, levelOnly);
+    const title = $("catalog-title").textContent + " · Glosa";
+    try {
+      if (navigator.share && matchMedia("(pointer: coarse)").matches) { await navigator.share({ title, url }); return; }
+      await navigator.clipboard.writeText(url);
+      App.toast(t("catalog.linkCopied"), 2500);
+    } catch (err) {
+      if (err && err.name === "AbortError") return; // el lector cerró el menú de compartir
+      window.prompt(t("catalog.share"), url);      // sin portapapeles (http, permisos): que lo copie a mano
+    }
   }
 
   function isOpen() { return !$("catalog-modal").hidden; }
@@ -530,6 +568,8 @@ window.Catalog = (function () {
       b.addEventListener("click", () => show(b.dataset.catalogLang));
     });
     document.querySelectorAll("[data-close-catalog]").forEach((el) => el.addEventListener("click", close));
+    $("catalog-share").addEventListener("click", shareLink);
+    window.addEventListener("hashchange", () => { if (!Langs.isOpen()) openFromHash(); });
     $("catalog-lang").addEventListener("click", (e) => {
       const b = e.target.closest("[data-lang]");
       if (b) show(b.dataset.lang);
@@ -538,5 +578,5 @@ window.Catalog = (function () {
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && isOpen()) { close(); e.stopPropagation(); } }, true);
   }
 
-  return { init, show, close, isOpen, fetchBook };
+  return { init, show, close, isOpen, fetchBook, openFromHash, linkTarget };
 })();
