@@ -25,6 +25,7 @@ $entrada = array(array('p' => 'n', 'o' => 'wiktionary', 's' => array(array('t' =
 
 // ---------------------------------------------------------------- pares y lectura en vacío
 ok(dicc_par_valido('en-es') && !dicc_par_valido('en-fr') && !dicc_par_valido(array('en-es')) && !dicc_par_valido('../x'), 'solo acepta los pares conocidos');
+ok(dicc_par_valido('eu-es') && dicc_par_valido('es-eu') && dicc_par_valido('de-eu'), 'acepta los pares del euskera');
 ok(dicc_leer_crudo('en-fr') === null, 'par desconocido: nada que leer');
 ok(dicc_leer_crudo('en-es') === '{"entries":{},"infl":{}}', 'par sin fichero: JSON vacío con objetos, no listas');
 ok(!is_dir(DICC_DIR), 'leer no crea la carpeta');

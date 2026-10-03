@@ -1,4 +1,5 @@
-/* Catálogo Top 100 de Project Gutenberg (inglés, español, italiano y alemán): modal, descarga y apertura en Glosa.
+/* Catálogo Top 100 de Project Gutenberg (inglés, español, italiano, alemán y chino) y clásicos de Wikisource
+   (árabe y euskera): modal, descarga y apertura en Glosa.
    Las páginas de Gutenberg no envían CORS: se leen a través del proxy /gb/ del servidor de Glosa
    (nginx, con caché). Abriendo index.html desde disco no hay proxy y el catálogo avisa. */
 window.Catalog = (function () {
@@ -21,6 +22,8 @@ window.Catalog = (function () {
     // API admite CORS (no hace falta el proxy, funciona incluso desde disco). Ordenados por vistas.
     ar: { label: "العربية", wikisource: true, credit: "https://ar.wikisource.org/" },
     zh: Object.assign({ label: "中文" }, search("zh")),
+    // Euskera: Gutenberg no tiene ninguno. Obras con capítulos de Wikisource en euskera, como el árabe.
+    eu: { label: "Euskara", wikisource: true, credit: "https://eu.wikisource.org/" },
   };
   const wsApiUrl = (l) => "https://" + l + ".wikisource.org/w/api.php";
   const WS_MAX_CHAPTERS = 60;
@@ -33,6 +36,15 @@ window.Catalog = (function () {
     ["تهافت الفلاسفة", "الغزالي"], ["قصص الأنبياء لابن كثير", "ابن كثير"], ["الفهرست", "ابن النديم"],
     ["لامية العرب", "الشنفرى"],
   ]; // fuera البيان والتبيين (800.000 caracteres en una página) y تاريخ الطبري (11 tomos): dejan el navegador clavado
+  const WORKS_EU = [
+    ["Garoa", "Txomin Agirre"], ["Kresala", "Txomin Agirre"], ["Peru Abarka", "Juan Antonio Mogel"], ["Gero", "Pedro Agerre Axular"],
+    ["Xabiertxo", "Isaac López Mendizabal"], ["Abarrak", "Kirikiño"], ["Linguae vasconum primitiae", "Bernat Etxepare"],
+    ["Ipui onac, ceintzuetan arquituco dituzten euscaldun necazari ta gazte guciac eracaste ederrac beren vicitza zucentzeco", "Bizenta Mogel"],
+    ["Bide Barrijak", ""], ["Laborantzako liburua", ""], ["Euskal Herriko historia 100 objektutan", ""], ["Utopia", "Thomas More"],
+    ["Alderdi Komunistaren Manifestua", "Karl Marx, Friedrich Engels"], ["Delituez eta zigorrez", "Cesare Beccaria"],
+    ["Filosofiaren arazoak", "Bertrand Russell"], ["Amerikako Demokrazia I", "Alexis de Tocqueville"],
+  ];
+  const WORKS = { ar: WORKS_AR, eu: WORKS_EU };
 
   const $ = (id) => document.getElementById(id);
   const t = (k, v) => I18n.t(k, v);
@@ -80,7 +92,7 @@ window.Catalog = (function () {
     return r.text();
   }
 
-  // ---------------------------------------------------------------- Wikisource (árabe)
+  // ---------------------------------------------------------------- Wikisource (árabe y euskera)
   async function wsApi(l, params) {
     const q = new URLSearchParams(Object.assign({ format: "json", origin: "*" }, params));
     const r = await fetch(wsApiUrl(l) + "?" + q.toString());
@@ -89,15 +101,15 @@ window.Catalog = (function () {
   }
 
   // Lista de clásicos ordenada por vistas de los últimos 60 días (una sola llamada a la API).
-  async function wsList() {
+  async function wsList(l) {
     const views = {};
     try {
-      const d = await wsApi("ar", { action: "query", prop: "pageviews", pvipdays: 60, titles: WORKS_AR.map((w) => w[0]).join("|") });
+      const d = await wsApi(l, { action: "query", prop: "pageviews", pvipdays: 60, titles: WORKS[l].map((w) => w[0]).join("|") });
       Object.values((d.query && d.query.pages) || {}).forEach((p) => {
         views[p.title] = Object.values(p.pageviews || {}).reduce((a, n) => a + (n || 0), 0);
       });
     } catch (_) { /* sin vistas: orden de la lista */ }
-    return WORKS_AR.map(([title, author]) => ({ id: "ws:ar:" + title, ws: true, wsLang: "ar", title, author, downloads: views[title] || 0 }))
+    return WORKS[l].map(([title, author]) => ({ id: "ws:" + l + ":" + title, ws: true, wsLang: l, title, author, downloads: views[title] || 0 }))
       .sort((a, b) => b.downloads - a.downloads);
   }
 
@@ -218,7 +230,7 @@ window.Catalog = (function () {
     } catch (_) { /* sin caché */ }
     const src = SOURCES[l];
     if (src.wikisource) {
-      const list = await wsList();
+      const list = await wsList(l);
       try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), books: list })); } catch (_) { /* ignorar */ }
       return list;
     }
@@ -348,8 +360,11 @@ window.Catalog = (function () {
     $("catalog-level").hidden = beginnerBooks(lang).length === 0;
     $("catalog-title").textContent = levelOnly ? t("catalog.title.beg", { lang: Langs.NAMES[lang] || lang }) : t("catalog.title." + lang);
     $("catalog-source").href = SOURCES[lang].credit;
+    const sub = $("catalog-sub");
+    sub.dataset.i18n = SOURCES[lang].wikisource ? "catalog.sub.ws" : "catalog.sub"; // data-i18n: se retraduce al cambiar de idioma
+    sub.textContent = t(sub.dataset.i18n);
     const hasWs = SOURCES[lang].wikisource || beginnerBooks(lang).some((b) => b.ws);
-    $("catalog-credit").textContent = t(SOURCES[lang].wikisource ? "catalog.credit.ws" : hasWs ? "catalog.credit.mixed" : "catalog.credit");
+    $("catalog-credit").textContent = t(SOURCES[lang].wikisource ? "catalog.credit.ws" + (lang === "ar" ? "" : "." + lang) : hasWs ? "catalog.credit.mixed" : "catalog.credit");
     $("catalog-grid").classList.toggle("books--rtl", lang === "ar");
   }
 

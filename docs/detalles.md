@@ -9,12 +9,12 @@ Referencia técnica del proyecto. La presentación y el uso están en el
   el índice del libro, imágenes incluidas), HTML (partido por encabezados) y
   TXT (partido por "Chapter"/"Capítulo").
 - **Idiomas**: la primera vez se abre un popup con dos filas de banderas,
-  "Idioma de lectura" (EN / ES / IT / DE) e "Idioma al que traducir" (los
-  mismos cuatro, menos el de lectura); el destino viene preseleccionado del
+  "Idioma de lectura" (EN / ES / IT / DE / AR / ZH / EU) e "Idioma al que traducir" (los
+  que tengan diccionario con el de lectura); el destino viene preseleccionado del
   idioma del navegador (`navigator.languages`) y se recuerda en Ajustes
   (`langsChosen`). La barra lleva un chivato "bandera EN → bandera ES" que
   reabre el popup. Al abrir un libro se detecta su idioma (por palabras
-  funcionales de los cuatro idiomas, muestreando el 25/50/75 % del libro para
+  funcionales de cada idioma, o por la escritura en árabe y chino, muestreando el 25/50/75 % del libro para
   saltarse portadas y avisos legales) y se cambia solo el par, conservando el
   idioma de destino. Desactivable en Ajustes. Las banderas son SVG propios:
   Windows no dibuja las banderas emoji.
@@ -136,6 +136,12 @@ Se cargan bajo demanda (solo el par activo) desde `dict/`:
 | `ar-es.js` | 31.099 (+233.570 flexiones) | 8,8 MB | pivote ar→en→es (`tools/build_pivot.py`) |
 | `zh-en.js` | 121.185 | 10,5 MB | CC-CEDICT (MDBG), con pinyin y mapa tradicional → simplificado |
 | `zh-es.js` | 110.414 | 13,1 MB | pivote zh→en→es (`tools/build_pivot.py`), conserva el pinyin |
+| `eu-en.js` | 12.993 (+204.659 flexiones) | 6,2 MB | Apertium eu-en + Wiktionary (traducciones al euskera del inglés) + kaikki.org (Wiktionary, euskera) |
+| `eu-es.js` | 15.999 (+202.635 flexiones) | 7,1 MB | Apertium eu-es + Wiktionary español (10.354 directos) + pivote eu→en→es |
+| `eu-it.js` / `eu-de.js` | 11.946 / 12.305 | 6,5 / 6,6 MB | pivote eu→en→it/de |
+| `en-eu.js` | 12.504 (+12.290 flexiones de `en-es.js`) | 1,2 MB | Apertium eu-en (al revés) + tablas de traducción al euskera del Wiktionary inglés |
+| `es-eu.js` | 60.222 | 11,8 MB | Apertium eu-es (al revés) + Wiktionary español (11.514 directos) + pivote es→en→eu |
+| `it-eu.js` / `de-eu.js` | 76.732 / 37.082 | 12,3 / 7,8 MB | pivote it→en→eu, de→en→eu |
 
 - **WikDict** (Wiktionary vía DBnary, CC BY-SA 3.0):
   `https://download.wikdict.com/dictionaries/tei/including_reverse/<src>-<dst>.tei`
@@ -167,6 +173,32 @@ Se cargan bajo demanda (solo el par activo) desde `dict/`:
 - **Alemán → español / italiano** (2026-09-20): mismo pivote con `--merge` desde `de-en.js`
   (WikDict deu-eng, 64k lemas y 72k flexiones, que heredan). Del 91 / 86 % al 95 / 95 % en
   el arranque de *Die Verwandlung* más un texto moderno.
+- **Euskera** (2026-10-03), como idioma de lectura y como destino. No hay WikDict ni FreeDict
+  para el euskera; las fuentes libres son pequeñas y se suman: los bilingües de **Apertium**
+  (`apertium-eu-es.eu-es.dix` y `apertium-eu-en.eu-en.dix` de github.com/apertium, GPL; ~9k lemas
+  cada uno, `tools/build_apertium.py` saca los dos sentidos), las **tablas de traducción al euskera**
+  del Wiktionary inglés (volcado completo de kaikki.org, 523 MB, ~7.000 traducciones) y del español
+  (~3.400), las ~3.000 **entradas en euskera del Wiktionary español** (`kaikki.org/eswiktionary/Vasco/`)
+  y el volcado de kaikki.org del **Wiktionary inglés para el euskera** (glosas de ~4.700 lemas,
+  tablas de declinación y ~9.800 formas sintéticas de verbos sin glosa, "of izan", "of joan").
+  `tools/build_wikt_eu.py` junta Apertium + Wiktionary en los directos `en-eu.js` y
+  `tools/{es-eu,eu-es,eu-en}-direct.js`; `tools/build_kaikki_eu.py` hace `eu-en.js`, y el resto sale
+  por pivote. Los auxiliares, las palabras más frecuentes, van a su verbo: los transitivos (du, zuen,
+  dute) a *ukan* (tener / have) y los intransitivos (da, zen, dira) a *izan*; las formas sintéticas mandan
+  sobre las tablas de nombres (*ziren* también es el genitivo de *zi*, bellota) y se generan sus formas
+  con subordinante (da → den, dela, denean, delako, baita, bada; dut → dudan, dudala). El lematizador
+  (`candidatesEu`, réplica en Python en `build_kaikki_eu.py`) quita primero las terminaciones del verbo
+  (hartzen → hartu, no *hartz* "oso"; joango → joan), luego caso y número con la -e- de apoyo y la -a
+  del lema fundida con el artículo (neskaren → neska, lurrean → lur) y por último los subordinantes.
+  Los clásicos usan la grafía de antes de la unificación (*Garoa*, 1912: *bear*, *andi*, *baño*, *ziran*,
+  *zuan*, *det*, *eztu*): si la palabra no sale tal cual, `euOldSpellings` prueba la forma actual
+  (behar, handi, baino, ziren, zuen, dut, du). En un texto moderno de prueba (Wikipedia + *Alderdi
+  Komunistaren Manifestua*) resuelve el 91 % de las palabras en minúscula y el 86 % de todas; en *Garoa*,
+  el 84 %. Lo que falta son nombres propios, préstamos cultos que ninguna fuente libre trae (*erlazio*,
+  *estamentu*) y voces dialectales; para eso queda la consulta online. La detección del idioma incluye
+  las formas antiguas (*ta*, *zan*, *ziran*, *zuan*) para reconocer también los clásicos. Gutenberg no tiene
+  libros en euskera: el catálogo «Clásicos en euskera» lista 16 obras de **Wikisource en euskera**
+  (*Garoa*, *Kresala*, *Peru Abarka*, *Gero*, *Xabiertxo*...), igual que el de árabe.
 - **Árabe como destino** (árabe estándar, no dariya): `en-ar.js` viene de FreeDict
   eng-ara tal cual (sin categorías gramaticales). `es-ar.js` lo construye
   `tools/build_es_ar.py` con dos fuentes: las traducciones directas al árabe del
@@ -239,6 +271,17 @@ python tools/build_kaikki_ar.py tools/kaikki-arabic.jsonl.gz tools/ara-eng/ara-e
 python tools/build_pivot.py dict/ar-en.js dict/en-es.js -o dict/ar-es.js --name "العربية → Español"
 python tools/build_cedict.py tools/cedict.txt.gz -o dict/zh-en.js
 python tools/build_pivot.py dict/zh-en.js dict/en-es.js -o dict/zh-es.js --name "中文 → Español"
+python tools/build_apertium.py tools/apertium-eu-es.eu-es.dix --left eu --right es -o tools/eu-es-apertium.js --reverse tools/es-eu-apertium.js
+python tools/build_apertium.py tools/apertium-eu-en.eu-en.dix --left eu --right en -o tools/eu-en-apertium.js --reverse tools/en-eu-apertium.js
+python tools/build_wikt_eu.py --lang es --dump tools/kaikki-eswiktionary-espanol.jsonl.gz --vasco tools/kaikki-eswiktionary-vasco.jsonl --to-eu tools/es-eu-direct.js --from-eu tools/eu-es-direct.js
+python tools/build_wikt_eu.py --lang en --dump tools/kaikki-english.jsonl.gz --to-eu dict/en-eu.js --from-eu tools/eu-en-direct.js --infl-from dict/en-es.js
+python tools/build_kaikki_eu.py tools/kaikki-basque.jsonl.gz --merge tools/eu-en-direct.js -o dict/eu-en.js
+python tools/build_pivot.py dict/eu-en.js dict/en-es.js --merge tools/eu-es-direct.js -o dict/eu-es.js --name "Euskara → Español"
+python tools/build_pivot.py dict/eu-en.js dict/en-it.js -o dict/eu-it.js --name "Euskara → Italiano"
+python tools/build_pivot.py dict/eu-en.js dict/en-de.js -o dict/eu-de.js --name "Euskara → Deutsch"
+python tools/build_pivot.py dict/es-en.js dict/en-eu.js --merge tools/es-eu-direct.js -o dict/es-eu.js --name "Español → Euskara"
+python tools/build_pivot.py dict/it-en.js dict/en-eu.js -o dict/it-eu.js --name "Italiano → Euskara"
+python tools/build_pivot.py dict/de-en.js dict/en-eu.js -o dict/de-eu.js --name "Deutsch → Euskara"
 ```
 
 (y así con cada par; en Windows, `PYTHONUTF8=1` para que las flechas del
@@ -261,7 +304,7 @@ marca la vocal temática: voleva → volere antes que volare), plurales
 alemán por declinación (-e, -en, -er, -es, -em, -n, -s, con deshacer el
 Umlaut: Häuser → Haus), raíz verbal + -en (gehst → gehen, sagte → sagen),
 participios ge-...-t/-en con prefijos separables (aufgemacht → aufmachen) y
-comparativos/superlativos (größer → groß). En italiano la palabra tras el
+comparativos/superlativos (größer → groß); euskera, ver arriba. En italiano la palabra tras el
 apóstrofo se busca aparte (l'amore → amore).
 
 Formato del fichero (también se puede cargar desde Ajustes como `.json` o `.js`;
@@ -300,7 +343,7 @@ visitas-lib.php       log de visitas (SQLite fuera del webroot, país por rangos
 .env.example          plantilla de configuración (el .env real no se sube)
 css/app.css           estilos (tokens claro/oscuro, contenido de EPUB/HTML)
 js/i18n.js            textos de la interfaz en español, inglés, italiano y alemán
-js/dictionary.js      pares, carga bajo demanda, lematización EN/ES/IT/DE/AR, consulta local y online, detección de idioma
+js/dictionary.js      pares, carga bajo demanda, lematización EN/ES/IT/DE/AR/EU, consulta local y online, detección de idioma
 js/langs.js           idiomas: banderas SVG, chivato de la barra y popup "Idioma de lectura / Idioma al que traducir"
 js/epub.js            EPUB: zip (JSZip), OPF, índice, capítulos saneados, imágenes a blob
 js/textdoc.js         HTML y TXT sueltos → capítulos
@@ -318,6 +361,9 @@ tools/build_es_ar.py  español → árabe: Wiktionary español + pivote es→en�
 tools/build_kaikki_ar.py árabe → inglés: kaikki (con formas flexionadas) + FreeDict ara-eng
 tools/build_pivot.py  diccionario por pivote genérico (A→en + en→X → A→X)
 tools/build_cedict.py chino → inglés desde CC-CEDICT (pinyin + mapa tradicional → simplificado)
+tools/build_apertium.py bilingüe de Apertium (.dix) → directos en los dos sentidos
+tools/build_wikt_eu.py X ↔ euskera: Apertium + tablas de traducción de Wiktionary
+tools/build_kaikki_eu.py euskera → inglés: kaikki (auxiliares, declinaciones) + directos
 tools/geo-import.php  carga la tabla IP → país en la BD de visitas (cron mensual)
 vendor/pdf*.js        pdf.js 3.11.174 (build legacy, funciona en file://)
 vendor/jszip.min.js   JSZip 3.10.1 (lectura de EPUB)

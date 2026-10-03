@@ -25,12 +25,14 @@ works by opening `index.html` straight from disk.
 - **Tap to translate**: popup with translations by sense, part of speech,
   lemma (houses → house), pronunciation and a link to Wiktionary. Select
   several words to translate the whole phrase (online lookup).
-- **Six languages**: English, Spanish, Italian and German in all 12
-  directions; Arabic as target and as reading language (RTL, custom
-  lemmatizer); Chinese as reading language (word segmentation and
-  traditional → simplified conversion).
-- **Embedded dictionaries**: 18 language pairs built from WikDict, FreeDict,
-  kaikki.org and CC-CEDICT, with rule-based lemmatization (houses → house,
+- **Seven languages**: English, Spanish, Italian and German in all 12
+  directions; Basque to and from all four (agglutinative lemmatizer that
+  resolves case endings and auxiliaries: gizonarekin → gizon, zuten → ukan);
+  Arabic as target and as reading language (RTL, custom lemmatizer); Chinese
+  as reading language (word segmentation and traditional → simplified
+  conversion).
+- **Embedded dictionaries**: 26 language pairs built from WikDict, FreeDict,
+  kaikki.org, Apertium and CC-CEDICT, with rule-based lemmatization (houses → house,
   ginge → gehen, يكتب → كتب). If a word is missing, optional online lookup
   (MyMemory, plus Wiktionary definitions and translations for English words).
   Inflections and old spellings Wiktionary knows ("spake" → speak) resolve to
@@ -42,7 +44,7 @@ works by opening `index.html` straight from disk.
 - **Library**: every book is saved with its cover and the exact spot you were
   at; "Continue reading" on the home screen.
 - **Built-in catalog**: Project Gutenberg's Top 100 in English, Spanish,
-  Italian, German and Chinese, plus Arabic classics from Wikisource; they
+  Italian, German and Chinese, plus Arabic and Basque classics from Wikisource; they
   download and open with one click.
 - **Optional Google account**: syncs the library and reading position across
   devices and opens books from Google Drive.
@@ -80,3 +82,4 @@ account, visit counter, gotchas) is in [docs/detalles.md](docs/detalles.md)
 - Online lookup: MyMemory and Wiktionary. Books: Project Gutenberg.
 - IP → country table: geo-whois-asn-country (sapics/ip-location-db, PDDL / public domain).
 - Chinese: CC-CEDICT (MDBG, CC BY-SA 4.0). Arabic: kaikki.org (CC BY-SA 4.0), FreeDict (GPL).
+- Basque: Apertium eu-es and eu-en (GPL), kaikki.org (Wiktionary, CC BY-SA 4.0).

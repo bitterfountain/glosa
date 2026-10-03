@@ -291,7 +291,7 @@ window.Popup = (function () {
     if (!("speechSynthesis" in window)) return;
     const meta = Dictionary.meta() || {};
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = { en: "en-US", es: "es-ES", fr: "fr-FR", de: "de-DE", it: "it-IT", pt: "pt-PT", ar: "ar-SA", zh: "zh-CN" }[meta.src] || meta.src || "en-US";
+    u.lang = { en: "en-US", es: "es-ES", fr: "fr-FR", de: "de-DE", it: "it-IT", pt: "pt-PT", ar: "ar-SA", zh: "zh-CN", eu: "eu-ES" }[meta.src] || meta.src || "en-US";
     u.rate = 0.95;
     speechSynthesis.cancel();
     speechSynthesis.speak(u);
