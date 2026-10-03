@@ -51,13 +51,14 @@ window.Library = (function () {
     }
   }
 
-  // Origen de un libro: { kind: "local" | "gutenberg" | "wikisource" | "drive", ref }.
+  // Origen de un libro: { kind: "local" | "gutenberg" | "wikisource" | "armiarma" | "drive", ref }.
   const LOCAL = { kind: "local", ref: "" };
   function keyFor(file, source) {
     const src = source || LOCAL;
     switch (src.kind) {
       case "gutenberg": return "gb:" + src.ref;
       case "wikisource": return "ws:" + src.ref;
+      case "armiarma": return "am:" + src.ref;
       case "drive": return "drive:" + src.ref;
       default: return "local:" + file.name + ":" + file.size;
     }

@@ -44,7 +44,8 @@ works by opening `index.html` straight from disk.
 - **Library**: every book is saved with its cover and the exact spot you were
   at; "Continue reading" on the home screen.
 - **Built-in catalog**: Project Gutenberg's Top 100 in English, Spanish,
-  Italian, German and Chinese, plus Arabic and Basque classics from Wikisource; they
+  Italian, German and Chinese, Arabic classics from Wikisource and ~380 books in Basque
+  from Armiarma and Wikisource; they
   download and open with one click.
 - **Optional Google account**: syncs the library and reading position across
   devices and opens books from Google Drive.
@@ -82,4 +83,4 @@ account, visit counter, gotchas) is in [docs/detalles.md](docs/detalles.md)
 - Online lookup: MyMemory and Wiktionary. Books: Project Gutenberg.
 - IP → country table: geo-whois-asn-country (sapics/ip-location-db, PDDL / public domain).
 - Chinese: CC-CEDICT (MDBG, CC BY-SA 4.0). Arabic: kaikki.org (CC BY-SA 4.0), FreeDict (GPL).
-- Basque: Apertium eu-es and eu-en (GPL), kaikki.org (Wiktionary, CC BY-SA 4.0).
+- Basque: Apertium eu-es and eu-en (GPL), kaikki.org (Wiktionary, CC BY-SA 4.0). Books in Basque: Armiarma (armiarma.eus).

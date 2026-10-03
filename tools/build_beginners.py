@@ -2,7 +2,8 @@
 final de cada informe docs/libros-infantiles-<idioma>.md.
 
 Formato de cada entrada del JSON: {"source": "gb", "id": 36558, "title": ..., "author": ..., "level": "infantil",
-"noimages": true} o {"source": "ws", "lang": "es", "title": "Título exacto de la página", "author": ..., "level": ...}.
+"noimages": true}, {"source": "ws", "lang": "es", "title": "Título exacto de la página", "author": ..., "level": ...}
+o {"source": "am", "ref": "kla:Autor, Título" (EPUB de Armiarma, como en js/armiarma.js), "title": ..., "level": ...}.
 Niveles: infantil | principiante | intermedio. Se ignoran fuentes que la app no sabe abrir (bloom, ia...).
 
 Uso:
@@ -14,7 +15,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-LANGS = ["es", "en", "it", "de", "ar", "zh"]
+LANGS = ["es", "en", "it", "de", "ar", "zh", "eu"]
 LEVELS = {"infantil", "principiante", "intermedio"}
 ORDER = {"infantil": 0, "principiante": 1, "intermedio": 2}
 
@@ -49,6 +50,9 @@ def load(lang):
         elif src == "ws":
             key = ("ws", it["title"])
             rec = {"ws": it.get("lang") or lang}
+        elif src == "am" and isinstance(it.get("ref"), str) and it["ref"][:4] in ("kla:", "itz:"):
+            key = ("am", it["ref"])
+            rec = {"am": it["ref"]}
         else:
             continue
         if key in seen:
@@ -66,7 +70,8 @@ def main():
         "   idioma con un distintivo de nivel y tienen su propio filtro (\"Infantil y principiantes\").",
         "   Fuentes: `gb` = ID de Project Gutenberg (EPUB vía el proxy; `noimages` pide la versión sin",
         "   imágenes cuando la ilustrada pesa decenas de MB); `ws` = título exacto de una página de",
-        "   Wikisource en ese idioma (API con CORS, sin proxy). GENERADO por tools/build_beginners.py a partir",
+        "   Wikisource en ese idioma (API con CORS, sin proxy); `am` = EPUB de Armiarma (euskera), \"kla:Autor, Título\"",
+        "   (vía api.php). GENERADO por tools/build_beginners.py a partir",
         "   del bloque JSON de docs/libros-infantiles-<idioma>.md; no editar a mano. */",
         "window.BEGINNERS = {",
     ]
@@ -77,7 +82,12 @@ def main():
             continue
         lines.append(f"  {lang}: [")
         for r in items:
-            head = f"gb: {r['gb']}" + (", noimages: true" if r.get("noimages") else "") if "gb" in r else f"ws: {js_str(r['ws'])}"
+            if "gb" in r:
+                head = f"gb: {r['gb']}" + (", noimages: true" if r.get("noimages") else "")
+            elif "am" in r:
+                head = f"am: {js_str(r['am'])}"
+            else:
+                head = f"ws: {js_str(r['ws'])}"
             lines.append(f"    {{ {head}, title: {js_str(r['title'])}, author: {js_str(r['author'])}, level: {js_str(r['level'])} }},")
         lines.append("  ],")
         total += len(items)
