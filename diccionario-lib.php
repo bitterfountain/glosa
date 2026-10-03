@@ -30,6 +30,7 @@ define('DICC_APRENDER_MAX_HORA', 600); // altas por IP y hora
 $DICC_PARES = array(
     'en-es', 'es-en', 'it-es', 'de-es', 'it-en', 'de-en', 'en-it', 'es-it', 'de-it', 'en-de', 'es-de', 'it-de',
     'es-ar', 'en-ar', 'ar-es', 'ar-en', 'zh-es', 'zh-en',
+    'eu-es', 'eu-en', 'eu-it', 'eu-de', 'es-eu', 'en-eu', 'it-eu', 'de-eu',
 );
 $DICC_ORIGENES = array('wiktionary', 'mymemory');
 

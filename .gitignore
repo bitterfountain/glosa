@@ -10,3 +10,8 @@ client_secret*.json
 *.apps.googleusercontent.com.json
 # diccionarios directos de WikDict que sirven de base al pivote (se regeneran con build_dict.py)
 tools/*-wikdict.js
+# euskera: bidix de Apertium, entradas en euskera del Wiktionary español y diccionarios directos intermedios
+tools/*.dix
+tools/*.jsonl
+tools/*-apertium.js
+tools/*-direct.js

@@ -122,7 +122,9 @@ def main():
             entries[lemma] = direct + new_recs
 
     infl = dict(base.get("infl", {}))
-    infl.update({k: v for k, v in a.get("infl", {}).items() if v in entries and k not in entries})
+    # Una forma que además es entrada propia también se hereda (eu "den": "todo", pero casi siempre es izan):
+    # el popup añade las acepciones del verbo detrás de las de la entrada.
+    infl.update({k: v for k, v in a.get("infl", {}).items() if v in entries and k != v})
     if base["meta"].get("license"):
         args.license = args.license or (base["meta"]["license"] + "; " + a["meta"].get("license", "") + "; " + b["meta"].get("license", ""))
     data = {

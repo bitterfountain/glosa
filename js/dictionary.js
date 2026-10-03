@@ -3,7 +3,7 @@ window.Dictionary = (function () {
   "use strict";
 
   // Súbelo al regenerar un diccionario: los ficheros de dict/ se sirven con caché larga.
-  const DICT_VERSION = "2026-09-20.3";
+  const DICT_VERSION = "2026-10-03.1";
 
   const PAIRS = [
     { id: "en-es", name: "English → Español", src: "en", dst: "es", file: "dict/en-es.js" },
@@ -24,6 +24,14 @@ window.Dictionary = (function () {
     { id: "ar-en", name: "العربية → English", src: "ar", dst: "en", file: "dict/ar-en.js" },
     { id: "zh-es", name: "中文 → Español", src: "zh", dst: "es", file: "dict/zh-es.js" },
     { id: "zh-en", name: "中文 → English", src: "zh", dst: "en", file: "dict/zh-en.js" },
+    { id: "eu-es", name: "Euskara → Español", src: "eu", dst: "es", file: "dict/eu-es.js" },
+    { id: "eu-en", name: "Euskara → English", src: "eu", dst: "en", file: "dict/eu-en.js" },
+    { id: "eu-it", name: "Euskara → Italiano", src: "eu", dst: "it", file: "dict/eu-it.js" },
+    { id: "eu-de", name: "Euskara → Deutsch", src: "eu", dst: "de", file: "dict/eu-de.js" },
+    { id: "es-eu", name: "Español → Euskara", src: "es", dst: "eu", file: "dict/es-eu.js" },
+    { id: "en-eu", name: "English → Euskara", src: "en", dst: "eu", file: "dict/en-eu.js" },
+    { id: "it-eu", name: "Italiano → Euskara", src: "it", dst: "eu", file: "dict/it-eu.js" },
+    { id: "de-eu", name: "Deutsch → Euskara", src: "de", dst: "eu", file: "dict/de-eu.js" },
   ];
 
   // Verbos irregulares ingleses frecuentes que Wiktionary no lista como flexión.
@@ -377,6 +385,86 @@ window.Dictionary = (function () {
     return out;
   }
 
+  // ---------------------------------------------------------------- lematización euskera
+  // Lengua aglutinante: el lema lleva pegados caso y número (etxean, gizonarekin, neskaren), el verbo
+  // conjugado va casi siempre en el auxiliar (du, zen, dira: formas que trae `infl` desde kaikki) y las
+  // subordinadas se pegan al verbo (dela, zuenean, delako). Réplica en Python: eu_candidates de
+  // tools/build_kaikki_eu.py (decide qué flexiones se guardan); si cambia aquí, cambiar allí.
+  const bySuffixLength = (list) => list.trim().split(/\s+/).filter((x, i, a) => a.indexOf(x) === i).sort((a, b) => b.length - a.length || (a < b ? -1 : a > b ? 1 : 0));
+  const NOUN_SUFFIXES_EU = bySuffixLength(`
+    arengandik engandik rengandik arengana engana rengana arengan engan rengan arengatik engatik rengatik agatik
+    arentzat entzat rentzat etaraino etarantz etatik etara etako etaz etan arekin ekin rekin
+    koarekin koaren koari koak koan koa koen koei koek tako dako iko ezko zko eko ko go
+    aren ren en ari ei ri ak ek ok oi on ean an tan era ra etik tik eraino raino erantz rantz
+    tzat az ez z ago agoa agoak egi egia ena enak txo tto ki ta da rik ik a k n i`);
+  // Imperfectivo y nombre verbal sobre el radical: hartzen → har(tu), ikusten → ikus(i), egiten → egi(n).
+  const VERB_SUFFIXES_EU = bySuffixLength(`
+    tzeagatik teagatik tzearen tearen tzeari teari tzerik terik tzeko teko tzera tera tzean tean tzeak teak tzea tea
+    tzen ten tze te`);
+  const VERB_TAILS_EU = ["tu", "du", "i", "n", "ri", "u", ""]; // el radical solo, al final: eratzen → eratu antes que era
+  // Subordinadas sobre el verbo conjugado: dela → da, zuela → zuen, direnean → dira, dudala → dut.
+  const SUBORD_EU = bySuffixLength("elarik enean enetik elako enik enez eneko ela en larik nean netik lako nik nez neko la n");
+  // Grafía de los clásicos (Garoa, Peru Abarka) → la actual: baño → baino, ziran → ziren, zuan → zuen,
+  // nere → nire, det → dut, eztu → du, etzuan → zuan, y la h que no escribían (andi → handi, bear → behar).
+  // Solo se prueban si la palabra tal cual no da nada (van al final de los candidatos).
+  function euOldSpellings(w) {
+    const out = [];
+    const v = w.replace(/iñ/g, "in").replace(/ñ/g, "in").replace(/([zndgt])uan/g, "$1uen").replace(/iran/g, "iren")
+      .replace(/^([zd])an/, "$1en").replace(/^ner([ei])/, "nir$1")
+      .replace(/^de(t|zu|gu)/, "du$1")  // det, dezu, degu (guipuzcoano) → dut, duzu, dugu
+      .replace(/^len/, "lehen")         // lenago → lehenago
+      .replace(/^zar/, "zahar")         // zarrak → zaharrak
+      .replace(/andu$/, "an");          // izandu → izan
+    if (v !== w) out.push(v);
+    [w].concat(out.slice(0, 1)).forEach((x) => {
+      if (x.startsWith("ezt") && x.length > 4) out.push("d" + x.slice(3));
+      if (x.startsWith("etz") && x.length > 4) out.push("z" + x.slice(3));
+    });
+    [w].concat(out.slice(0, 1)).forEach((x) => {
+      if ("aeiou".includes(x[0])) out.push("h" + x);
+      const m = /([aeiou])([aeiou])/.exec(x);
+      if (m) out.push(x.slice(0, m.index + 1) + "h" + x.slice(m.index + 1));
+    });
+    return out;
+  }
+  function candidatesEu(w, noVariants) {
+    const out = [];
+    const seen = new Set();
+    const push = (c, kind) => { if (c && c.length > 1 && !seen.has(c)) { seen.add(c); out.push({ c, kind: kind || "" }); } };
+    push(w, "");
+    if (active.infl[w]) push(active.infl[w], "");
+    // Primero el verbo: hartzen es hartu (coger), no hartz (oso) + -en.
+    VERB_SUFFIXES_EU.forEach((suf) => {
+      if (!w.endsWith(suf) || w.length - suf.length < 2) return;
+      const r = w.slice(0, -suf.length);
+      VERB_TAILS_EU.forEach((tail) => push(r + tail, "v"));
+    });
+    NOUN_SUFFIXES_EU.forEach((suf) => {
+      if (!w.endsWith(suf) || w.length - suf.length < 2) return;
+      const r = w.slice(0, -suf.length);
+      push(r, "");
+      if (suf[0] === "a" && !r.endsWith("a")) push(r + "a", ""); // neskaren → neska: la -a del lema se funde con la del artículo
+      if (r.endsWith("rr")) push(r.slice(0, -1), "");             // lurrean → lur
+    });
+    const stems = [w];
+    ["bait", "ba"].forEach((pre) => {
+      if (w.startsWith(pre) && w.length - pre.length >= 2) { const rest = w.slice(pre.length); stems.push(rest, "d" + rest); } // baitzen → zen, baitu → du
+    });
+    stems.forEach((s) => {
+      push(s, "");
+      SUBORD_EU.forEach((suf) => {
+        if (!s.endsWith(suf) || s.length - suf.length < 1) return;
+        const r = s.slice(0, -suf.length);
+        [r, r + "a", r + "en", r + "n", r + "e"].forEach((c) => push(c, ""));
+        if (r.endsWith("d")) push(r.slice(0, -1) + "t", "");
+      });
+    });
+    if (!noVariants) euOldSpellings(w).forEach((v) => candidatesEu(v, true).forEach(({ c, kind }) => push(c, kind)));
+    if (noVariants) return out;
+    out.slice(1).forEach(({ c, kind }) => { if (active.infl[c]) push(active.infl[c], kind); });
+    return out;
+  }
+
   // ---------------------------------------------------------------- árabe
   // Los libros vienen sin vocales: las claves del diccionario también (build_kaikki_ar.py aplica
   // esta misma normalización). Se quitan harakat y tatwil, y se unifican alif (أإآ → ا) y ya final (ى → ي).
@@ -457,7 +545,7 @@ window.Dictionary = (function () {
   function candidates(w) {
     const src = active.meta.src || "en";
     if (src === "zh") return candidatesZh(w);
-    const fn = { es: candidatesEs, it: candidatesIt, de: candidatesDe, ar: candidatesAr }[src] || candidatesEn;
+    const fn = { es: candidatesEs, it: candidatesIt, de: candidatesDe, ar: candidatesAr, eu: candidatesEu }[src] || candidatesEn;
     const out = fn(w);
     // "l'amore", "dell'uomo", "d'un": la palabra de verdad va tras el apóstrofo.
     const ap = w.lastIndexOf("'");
@@ -503,8 +591,8 @@ window.Dictionary = (function () {
   // (wikitexto del artículo). Del HTML de las definiciones sale además el lema cuando la palabra es una
   // flexión o una grafía antigua ("plural of house", "first-person plural preterite of andar", "archaic
   // spelling of …"): eso resuelve en local lo que el lematizador no sabía.
-  const WIKI_LANG = { es: "es", en: "en", it: "it", de: "de", ar: "ar", zh: "cmn" };
-  const WIKI_REST_LANG = { es: "es", en: "en", it: "it", de: "de", ar: "ar" }; // clave del idioma en la API REST
+  const WIKI_LANG = { es: "es", en: "en", it: "it", de: "de", ar: "ar", zh: "cmn", eu: "eu" };
+  const WIKI_REST_LANG = { es: "es", en: "en", it: "it", de: "de", ar: "ar", eu: "eu" }; // clave del idioma en la API REST
   const WIKI_POS = {
     noun: "n", "proper noun": "pn", verb: "v", adjective: "adj", adverb: "adv", preposition: "prep",
     conjunction: "conj", pronoun: "pron", interjection: "int", determiner: "det", article: "article",
@@ -645,6 +733,8 @@ window.Dictionary = (function () {
     es: ["de", "la", "que", "el", "en", "y", "los", "del", "se", "las", "por", "un", "una", "con", "no", "para", "es", "su", "al", "lo"],
     it: ["di", "che", "il", "non", "per", "una", "del", "della", "gli", "nel", "sono", "anche", "come", "più", "era", "ma", "lo", "io", "aveva", "suo"],
     de: ["der", "die", "und", "den", "von", "das", "mit", "sich", "des", "auf", "für", "ist", "im", "dem", "nicht", "ein", "eine", "als", "auch", "es"],
+    // Euskera: con las formas de la grafía antigua de los clásicos (ta, zan, ziran, zuan) además de las actuales.
+    eu: ["eta", "ta", "da", "ez", "zen", "zan", "du", "bat", "ere", "dira", "zuen", "zuan", "ziren", "ziran", "bere", "edo", "baina", "izan", "dago", "zuten"],
     ar: ["في", "من", "على", "ان", "الى", "عن", "هذا", "كان", "التي", "الذي", "ما", "لا", "مع", "هو", "هي", "كل", "قد", "ذلك", "بعد", "او"],
   };
   function detectLanguage(text) {

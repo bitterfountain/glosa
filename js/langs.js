@@ -15,10 +15,12 @@ window.Langs = (function () {
     de: '<svg viewBox="0 0 60 40" aria-hidden="true"><rect width="60" height="13.4" fill="#000"/><rect y="13.3" width="60" height="13.4" fill="#DD0000"/><rect y="26.6" width="60" height="13.4" fill="#FFCE00"/></svg>',
     zh: '<svg viewBox="0 0 60 40" aria-hidden="true"><rect width="60" height="40" fill="#DE2910"/><path d="M12 6l2.2 6.7h7l-5.7 4.1 2.2 6.7-5.7-4.1-5.7 4.1 2.2-6.7-5.7-4.1h7z" fill="#FFDE00"/><g fill="#FFDE00"><circle cx="24" cy="5" r="1.6"/><circle cx="28" cy="9.5" r="1.6"/><circle cx="28" cy="15.5" r="1.6"/><circle cx="24" cy="20" r="1.6"/></g></svg>',
     // Árabe: bandera de Marruecos (el lector para el que se añadió); el diccionario es árabe estándar.
+    // Euskera: ikurriña.
+    eu: '<svg viewBox="0 0 60 40" aria-hidden="true"><rect width="60" height="40" fill="#D52B1E"/><path d="M0 0 60 40M60 0 0 40" stroke="#009B48" stroke-width="7"/><path d="M30 0v40M0 20h60" stroke="#fff" stroke-width="6"/></svg>',
     ar: '<svg viewBox="0 0 60 40" aria-hidden="true"><rect width="60" height="40" fill="#C1272D"/><path d="M30 12.5l2.9 8.9h9.4l-7.6 5.5 2.9 8.9-7.6-5.5-7.6 5.5 2.9-8.9-7.6-5.5h9.4z" fill="none" stroke="#006233" stroke-width="2.2"/></svg>',
   };
   // Nombre en el propio idioma: así cada lector reconoce el suyo sin traducir.
-  const NAMES = { en: "English", es: "Español", it: "Italiano", de: "Deutsch", ar: "العربية", zh: "中文" };
+  const NAMES = { en: "English", es: "Español", it: "Italiano", de: "Deutsch", ar: "العربية", zh: "中文", eu: "Euskara" };
 
   let srcSel = null;   // selección provisional dentro del popup
   let dstSel = null;
