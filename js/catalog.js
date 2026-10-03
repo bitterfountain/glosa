@@ -36,13 +36,14 @@ window.Catalog = (function () {
     ["تهافت الفلاسفة", "الغزالي"], ["قصص الأنبياء لابن كثير", "ابن كثير"], ["الفهرست", "ابن النديم"],
     ["لامية العرب", "الشنفرى"],
   ]; // fuera البيان والتبيين (800.000 caracteres en una página) y تاريخ الطبري (11 tomos): dejan el navegador clavado
+  // Fuera Xabiertxo, Kresala, Abarrak, Linguae vasconum primitiae, Laborantzako liburua y Amerikako
+  // Demokrazia I: su página principal no enlaza los capítulos de forma que wsLinks los encuentre (salen vacíos).
   const WORKS_EU = [
-    ["Garoa", "Txomin Agirre"], ["Kresala", "Txomin Agirre"], ["Peru Abarka", "Juan Antonio Mogel"], ["Gero", "Pedro Agerre Axular"],
-    ["Xabiertxo", "Isaac López Mendizabal"], ["Abarrak", "Kirikiño"], ["Linguae vasconum primitiae", "Bernat Etxepare"],
+    ["Garoa", "Txomin Agirre"], ["Peru Abarka", "Juan Antonio Mogel"], ["Gero", "Pedro Agerre Axular"],
     ["Ipui onac, ceintzuetan arquituco dituzten euscaldun necazari ta gazte guciac eracaste ederrac beren vicitza zucentzeco", "Bizenta Mogel"],
-    ["Bide Barrijak", ""], ["Laborantzako liburua", ""], ["Euskal Herriko historia 100 objektutan", ""], ["Utopia", "Thomas More"],
+    ["Bide Barrijak", ""], ["Euskal Herriko historia 100 objektutan", ""], ["Utopia", "Thomas More"],
     ["Alderdi Komunistaren Manifestua", "Karl Marx, Friedrich Engels"], ["Delituez eta zigorrez", "Cesare Beccaria"],
-    ["Filosofiaren arazoak", "Bertrand Russell"], ["Amerikako Demokrazia I", "Alexis de Tocqueville"],
+    ["Filosofiaren arazoak", "Bertrand Russell"],
   ];
   const WORKS = { ar: WORKS_AR, eu: WORKS_EU };
 
@@ -118,7 +119,7 @@ window.Catalog = (function () {
   async function wsPageHtml(l, title, attempt) {
     let d;
     try {
-      d = await wsApi(l, { action: "parse", page: title, prop: "text", disableeditsection: 1 });
+      d = await wsApi(l, { action: "parse", page: title, prop: "text", disableeditsection: 1, redirects: 1 }); // capítulos de Garoa: "Garoa - X" redirige a "Garoa/X"
     } catch (err) {
       if ((attempt || 0) < 2) { await new Promise((r) => setTimeout(r, 1200 * ((attempt || 0) + 1))); return wsPageHtml(l, title, (attempt || 0) + 1); }
       throw err;

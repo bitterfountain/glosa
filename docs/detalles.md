@@ -197,8 +197,9 @@ Se cargan bajo demanda (solo el par activo) desde `dict/`:
   el 84 %. Lo que falta son nombres propios, préstamos cultos que ninguna fuente libre trae (*erlazio*,
   *estamentu*) y voces dialectales; para eso queda la consulta online. La detección del idioma incluye
   las formas antiguas (*ta*, *zan*, *ziran*, *zuan*) para reconocer también los clásicos. Gutenberg no tiene
-  libros en euskera: el catálogo «Clásicos en euskera» lista 16 obras de **Wikisource en euskera**
-  (*Garoa*, *Kresala*, *Peru Abarka*, *Gero*, *Xabiertxo*...), igual que el de árabe.
+  libros en euskera: el catálogo «Clásicos en euskera» lista 10 obras de **Wikisource en euskera**
+  (*Garoa*, *Peru Abarka*, *Gero*, *Ipui onac*...), igual que el de árabe. Los capítulos que son
+  redirecciones (los de *Garoa*) se siguen con `redirects=1`.
 - **Árabe como destino** (árabe estándar, no dariya): `en-ar.js` viene de FreeDict
   eng-ara tal cual (sin categorías gramaticales). `es-ar.js` lo construye
   `tools/build_es_ar.py` con dos fuentes: las traducciones directas al árabe del
