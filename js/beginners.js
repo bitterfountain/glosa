@@ -2,7 +2,8 @@
    idioma con un distintivo de nivel y tienen su propio filtro ("Infantil y principiantes").
    Fuentes: `gb` = ID de Project Gutenberg (EPUB vía el proxy; `noimages` pide la versión sin
    imágenes cuando la ilustrada pesa decenas de MB); `ws` = título exacto de una página de
-   Wikisource en ese idioma (API con CORS, sin proxy). GENERADO por tools/build_beginners.py a partir
+   Wikisource en ese idioma (API con CORS, sin proxy); `am` = EPUB de Armiarma (euskera), "kla:Autor, Título"
+   (vía api.php). GENERADO por tools/build_beginners.py a partir
    del bloque JSON de docs/libros-infantiles-<idioma>.md; no editar a mano. */
 window.BEGINNERS = {
   es: [
@@ -238,5 +239,25 @@ window.BEGINNERS = {
     { gb: 52269, title: "幼學瓊林", author: "程允升", level: "intermedio" },
     { ws: "zh", title: "龍文鞭影", author: "蕭良有", level: "intermedio" },
     { ws: "zh", title: "伊索寓言 (林紓)", author: "Esopo, trad. 林紓", level: "intermedio" },
+  ],
+  eu: [
+    { am: "kla:Bizenta Mogel, Ipui onak", title: "Ipui onak", author: "Bizenta Mogel", level: "infantil" },
+    { am: "kla:Juan Mateo Zabala, Alegiak", title: "Alegiak", author: "Juan Mateo Zabala", level: "infantil" },
+    { am: "kla:Agustin Paskual Iturriaga, Ipuinak", title: "Ipuinak", author: "Agustin Paskual Iturriaga", level: "infantil" },
+    { am: "itz:Hans Christian Andersen, Hemeretzi ipuin", title: "Hemeretzi ipuin", author: "Hans Christian Andersen", level: "infantil" },
+    { am: "kla:Wendworth Webster, Euskal ipuinak", title: "Euskal ipuinak", author: "Wentworth Webster", level: "infantil" },
+    { am: "kla:Pedro Miguel Urruzuno, Ur-zale baten ipuiak", title: "Ur-zale baten ipuiak", author: "Pedro Migel Urruzuno", level: "infantil" },
+    { am: "kla:Bittor Garitaonandia, Ipuin laburrak", title: "Ipuin laburrak", author: "Bitor Garitaonandia", level: "principiante" },
+    { am: "kla:Zerbitzari, Ixtorio eta ipuinak", title: "Ixtorio eta ipuinak", author: "Zerbitzari", level: "principiante" },
+    { am: "kla:Jautarkol, Ipuiak", title: "Ipuiak", author: "Jautarkol", level: "principiante" },
+    { am: "kla:Alfonso Maria Zabala, Gabon gau bat", title: "Gabon zar bat eta beste ipui asko", author: "Alfonso Maria Zabala", level: "principiante" },
+    { am: "itz:Saki, Ipui hautatuak", title: "Ipui hautatuak", author: "Saki", level: "principiante" },
+    { am: "kla:Goietxe, Alegiak", title: "Fableak edo Alegiak", author: "Martin Goietxe", level: "intermedio" },
+    { am: "kla:Kirikiño, Abarrak", title: "Abarrak", author: "Kirikiño", level: "intermedio" },
+    { am: "itz:Daniel Defoe, Robinson Crusoe", title: "Robinson Crusoe", author: "Daniel Defoe", level: "intermedio" },
+    { am: "itz:Jonathan Swift, Gulliver-en bidaiak", title: "Gulliver-en bidaiak", author: "Jonathan Swift", level: "intermedio" },
+    { am: "itz:Jules Verne, Michel Strogoff", title: "Michel Strogoff", author: "Jules Verne", level: "intermedio" },
+    { am: "itz:Mark Twain, Huckleberry Finn-en abenturak", title: "Huckleberry Finn-en abenturak", author: "Mark Twain", level: "intermedio" },
+    { am: "kla:Domingo Agirre, Kresala", title: "Kresala", author: "Domingo Agirre", level: "intermedio" },
   ],
 };

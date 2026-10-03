@@ -278,12 +278,12 @@ function usuarios_validar_libro($b)
         return null;
     }
     $key = $b['key'];
-    if ($key === '' || strlen($key) > USUARIOS_TEXTO_MAX || !preg_match('/^(gb|ws|drive|local):/', $key)) {
+    if ($key === '' || strlen($key) > USUARIOS_TEXTO_MAX || !preg_match('/^(gb|ws|am|drive|local):/', $key)) {
         return null;
     }
     $source = isset($b['source']) && is_array($b['source']) ? $b['source'] : array();
     $kind = isset($source['kind']) && is_string($source['kind']) ? $source['kind'] : 'local';
-    if (!in_array($kind, array('local', 'gutenberg', 'wikisource', 'drive'), true)) {
+    if (!in_array($kind, array('local', 'gutenberg', 'wikisource', 'armiarma', 'drive'), true)) {
         return null;
     }
     $texto = function ($v, $max = USUARIOS_TEXTO_MAX) {

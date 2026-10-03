@@ -11,6 +11,7 @@
 //   POST books/remove  { key, at }            borra un libro (lápida para los demás dispositivos)
 //   GET  dict/extra    ?pair=en-es             diccionario aprendido online del par: { entries, infl } (sin sesión)
 //   POST dict/learn    { pair, word, entries?, lemma? }  guarda una palabra resuelta online → { status } (sin sesión)
+//   GET  book/armiarma ?m=kla&f=<Autor, Título>  EPUB de Armiarma, que no envía CORS (sin sesión, con caché)
 //
 // Sesión: cookie HttpOnly. CSRF: toda petición que no sea GET exige la cabecera X-Requested-With
 // (un formulario de otra web no puede ponerla) y, si el navegador manda Origin, que coincida con el
@@ -18,6 +19,7 @@
 
 require_once __DIR__ . '/usuarios-lib.php';
 require_once __DIR__ . '/diccionario-lib.php';
+require_once __DIR__ . '/libros-lib.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -166,13 +168,37 @@ switch ($metodo . ' ' . $ruta) {
         }
         $cuerpo = api_cuerpo();
         $key = isset($cuerpo['key']) && is_string($cuerpo['key']) ? $cuerpo['key'] : '';
-        if ($key === '' || strlen($key) > USUARIOS_TEXTO_MAX || !preg_match('/^(gb|ws|drive|local):/', $key)) {
+        if ($key === '' || strlen($key) > USUARIOS_TEXTO_MAX || !preg_match('/^(gb|ws|am|drive|local):/', $key)) {
             api_error(400, 'clave_invalida');
         }
         $at = isset($cuerpo['at']) && is_numeric($cuerpo['at']) ? (int) $cuerpo['at'] : 0;
         usuarios_libro_borrar($db, $user['id'], $key, $at);
         api_responder(200, array('ok' => true));
         break;
+
+    case 'GET book/armiarma':
+        $m = isset($_GET['m']) ? (string) $_GET['m'] : '';
+        $f = isset($_GET['f']) ? (string) $_GET['f'] : '';
+        if (!libros_armiarma_valido($m, $f)) {
+            api_error(400, 'libro_invalido');
+        }
+        // Solo cuentan para el límite las descargas que llegan a Armiarma; la caché se sirve sin más.
+        if (!is_file(libros_armiarma_ruta($m, $f))) {
+            $ip = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
+            if (!usuarios_ratelimit($db, 'armiarma:' . hash('sha256', $ip), LIBROS_ARMIARMA_MAX_HORA, 3600)) {
+                api_error(429, 'demasiadas_descargas');
+            }
+        }
+        $epub = libros_armiarma_epub($m, $f);
+        if ($epub === null) {
+            api_error(502, 'libro_no_disponible');
+        }
+        header('Content-Type: application/epub+zip');
+        header('Cache-Control: public, max-age=2592000');
+        header('Content-Length: ' . strlen($epub));
+        http_response_code(200);
+        echo $epub;
+        exit;
 
     case 'GET dict/extra':
         $pair = isset($_GET['pair']) ? (string) $_GET['pair'] : '';

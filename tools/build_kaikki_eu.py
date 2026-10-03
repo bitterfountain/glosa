@@ -134,6 +134,16 @@ def eu_candidates(w, infl=None, variants=True):
     return out
 
 
+# Auxiliares vizcaínos (Peru Abarka, Kresala, Ipui onak): eban = zuen, dau = du, dot = dut, dabe = dute...
+OLD_AUX = {
+    "dot": "ukan", "dozu": "ukan", "dau": "ukan", "dogu": "ukan", "dozue": "ukan", "dabe": "ukan",
+    "neban": "ukan", "eban": "ukan", "genduan": "ukan", "zenduan": "ukan", "eben": "ukan", "eurean": "ukan",
+    "deutsat": "ukan", "deutso": "ukan", "deutsa": "ukan", "eutsan": "ukan", "eutsen": "ukan",
+    "zan": "izan", "ziran": "izan", "dan": "izan", "nintzan": "izan", "ginean": "izan", "giñan": "izan",
+    "zinean": "izan", "jatan": "izan", "jaku": "izan", "jako": "izan", "jakon": "izan", "yaku": "izan",
+}
+
+
 def subordinate_forms(f):
     """Formas con subordinante de un verbo conjugado: da → den, dena, dela, denean, delako, baita, bada;
     dut → dudan, dudala; zuen → zuena, zuela. Son las palabras más frecuentes de un texto y las reglas
@@ -245,6 +255,13 @@ def load_kaikki(path):
                 if not form or form == word or form == "-" or re.search(r"[\s#]", form) or set(f.get("tags", [])) & FORM_SKIP_TAGS:
                     continue
                 target.setdefault(form, word)
+    # Grafía antigua de los auxiliares (zan, ziran, zuan: la de los clásicos) y los vizcaínos más frecuentes,
+    # que no están en kaikki y que las tablas de nombres confunden (zan: "zain", vena).
+    for form, lemma in list(synthetic.items()):
+        if form.endswith("en") and len(form) > 2:
+            synthetic.setdefault(form[:-2] + "an", lemma)
+    for form, lemma in OLD_AUX.items():
+        synthetic[form] = lemma
     for forms in (synthetic, verb_forms):
         for form, lemma in list(forms.items()):
             for sub in subordinate_forms(form):

@@ -97,7 +97,7 @@ Sin cuenta, Glosa funciona como siempre. Con «Iniciar sesión con Google» (ico
 Módulos: `js/auth.js` (sesión), `js/sync.js` (sincronización), `js/drive.js` (Drive).
 Servidor: `api.php` (rutas en su cabecera) sobre `usuarios-lib.php`, con su propia SQLite
 (`glosa-usuarios.sqlite`) en la carpeta de datos `GLOSA_DATA_DIR`. Tests:
-`php tools/test-usuarios.php`.
+`php tools/test-usuarios.php`; descarga de libros de Armiarma: `php tools/test-libros.php`.
 
 Configuración (en `glosa.env` de la carpeta de datos, o en un `.env` junto a `index.php`;
 `index.php` las inyecta como `<meta>` y sin ellas no aparece el inicio de sesión):
@@ -192,14 +192,23 @@ Se cargan bajo demanda (solo el par activo) desde `dict/`:
   del lema fundida con el artículo (neskaren → neska, lurrean → lur) y por último los subordinantes.
   Los clásicos usan la grafía de antes de la unificación (*Garoa*, 1912: *bear*, *andi*, *baño*, *ziran*,
   *zuan*, *det*, *eztu*): si la palabra no sale tal cual, `euOldSpellings` prueba la forma actual
-  (behar, handi, baino, ziren, zuen, dut, du). En un texto moderno de prueba (Wikipedia + *Alderdi
+  (behar, handi, baino, ziren, zuen, dut, du), y los auxiliares en grafía antigua y vizcaínos más
+  frecuentes (zan, ziran, zuan, eban, dau, dot, dabe) van a su verbo por la tabla `OLD_AUX` de `build_kaikki_eu.py`. En un texto moderno de prueba (Wikipedia + *Alderdi
   Komunistaren Manifestua*) resuelve el 91 % de las palabras en minúscula y el 86 % de todas; en *Garoa*,
   el 84 %. Lo que falta son nombres propios, préstamos cultos que ninguna fuente libre trae (*erlazio*,
   *estamentu*) y voces dialectales; para eso queda la consulta online. La detección del idioma incluye
   las formas antiguas (*ta*, *zan*, *ziran*, *zuan*) para reconocer también los clásicos. Gutenberg no tiene
-  libros en euskera: el catálogo «Clásicos en euskera» lista 10 obras de **Wikisource en euskera**
-  (*Garoa*, *Peru Abarka*, *Gero*, *Ipui onac*...), igual que el de árabe. Los capítulos que son
-  redirecciones (los de *Garoa*) se siguen con `redirects=1`.
+  libros en euskera: el catálogo «Libros en euskera» lista los 376 EPUB de **Armiarma**
+  (armiarma.eus/liburu-e: 318 clásicos vascos de los siglos XVI-XX y 58 traducciones de Literatura
+  Unibertsala; lista en `js/armiarma.js`, generada por `tools/build_armiarma.py`, que se carga solo al abrir
+  ese catálogo) más 5 obras de **Wikisource en euskera** que Armiarma no tiene. Armiarma no envía CORS: los
+  EPUB se piden a `api.php?r=book/armiarma&m=kla&f=<Autor, Título>` (`libros-lib.php`), que solo descarga de
+  armiarma.eus, valida el nombre, lo pasa a ISO-8859-1 (Armiarma no entiende UTF-8: *Argaiñaratz*), limita
+  las descargas nuevas a 120 por IP y hora y guarda cada EPUB en `armiarma/` de la carpeta de datos. En la
+  biblioteca el origen es `armiarma` (clave `am:kla:<fichero>`). El filtro «Infantil y principiantes» trae 18
+  libros (fábulas, cuentos, Andersen, Saki, Robinson, Gulliver...): ver `docs/libros-infantiles-eu.md`, con
+  las fuentes descartadas (StoryWeaver exige cuenta para leer; Liburuklik e Internet Archive son escaneos).
+  En los capítulos de Wikisource que son redirecciones se siguen con `redirects=1`.
 - **Árabe como destino** (árabe estándar, no dariya): `en-ar.js` viene de FreeDict
   eng-ara tal cual (sin categorías gramaticales). `es-ar.js` lo construye
   `tools/build_es_ar.py` con dos fuentes: las traducciones directas al árabe del
@@ -365,6 +374,8 @@ tools/build_cedict.py chino → inglés desde CC-CEDICT (pinyin + mapa tradicion
 tools/build_apertium.py bilingüe de Apertium (.dix) → directos en los dos sentidos
 tools/build_wikt_eu.py X ↔ euskera: Apertium + tablas de traducción de Wiktionary
 tools/build_kaikki_eu.py euskera → inglés: kaikki (auxiliares, declinaciones) + directos
+tools/build_armiarma.py lista de EPUB en euskera de Armiarma → js/armiarma.js
+libros-lib.php        descarga de EPUB de Armiarma para el catálogo (api.php?r=book/armiarma), con caché
 tools/geo-import.php  carga la tabla IP → país en la BD de visitas (cron mensual)
 vendor/pdf*.js        pdf.js 3.11.174 (build legacy, funciona en file://)
 vendor/jszip.min.js   JSZip 3.10.1 (lectura de EPUB)

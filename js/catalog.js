@@ -22,8 +22,9 @@ window.Catalog = (function () {
     // API admite CORS (no hace falta el proxy, funciona incluso desde disco). Ordenados por vistas.
     ar: { label: "العربية", wikisource: true, credit: "https://ar.wikisource.org/" },
     zh: Object.assign({ label: "中文" }, search("zh")),
-    // Euskera: Gutenberg no tiene ninguno. Obras con capítulos de Wikisource en euskera, como el árabe.
-    eu: { label: "Euskara", wikisource: true, credit: "https://eu.wikisource.org/" },
+    // Euskera: Gutenberg no tiene ninguno. Los ~380 EPUB de Armiarma (clásicos vascos y literatura universal
+    // traducida; js/armiarma.js, descarga por api.php porque no envía CORS) más las obras de Wikisource.
+    eu: { label: "Euskara", wikisource: true, armiarma: true, credit: "https://armiarma.eus/liburu-e/" },
   };
   const wsApiUrl = (l) => "https://" + l + ".wikisource.org/w/api.php";
   const WS_MAX_CHAPTERS = 60;
@@ -36,12 +37,11 @@ window.Catalog = (function () {
     ["تهافت الفلاسفة", "الغزالي"], ["قصص الأنبياء لابن كثير", "ابن كثير"], ["الفهرست", "ابن النديم"],
     ["لامية العرب", "الشنفرى"],
   ]; // fuera البيان والتبيين (800.000 caracteres en una página) y تاريخ الطبري (11 tomos): dejan el navegador clavado
-  // Fuera Xabiertxo, Kresala, Abarrak, Linguae vasconum primitiae, Laborantzako liburua y Amerikako
-  // Demokrazia I: su página principal no enlaza los capítulos de forma que wsLinks los encuentre (salen vacíos).
+  // Solo lo que no está en Armiarma (Garoa, Peru Abarka, Gero, Ipui onak y Bide barrijak sí están, maquetados en
+  // EPUB). Fuera Xabiertxo, Linguae vasconum primitiae, Laborantzako liburua y Amerikako Demokrazia I: su
+  // página principal no enlaza los capítulos de forma que wsLinks los encuentre (salen vacíos).
   const WORKS_EU = [
-    ["Garoa", "Txomin Agirre"], ["Peru Abarka", "Juan Antonio Mogel"], ["Gero", "Pedro Agerre Axular"],
-    ["Ipui onac, ceintzuetan arquituco dituzten euscaldun necazari ta gazte guciac eracaste ederrac beren vicitza zucentzeco", "Bizenta Mogel"],
-    ["Bide Barrijak", ""], ["Euskal Herriko historia 100 objektutan", ""], ["Utopia", "Thomas More"],
+    ["Euskal Herriko historia 100 objektutan", ""], ["Utopia", "Thomas More"],
     ["Alderdi Komunistaren Manifestua", "Karl Marx, Friedrich Engels"], ["Delituez eta zigorrez", "Cesare Beccaria"],
     ["Filosofiaren arazoak", "Bertrand Russell"],
   ];
@@ -56,6 +56,7 @@ window.Catalog = (function () {
   let opening = null;
 
   function available(l) { return (SOURCES[l] && SOURCES[l].wikisource) || /^https?:$/.test(location.protocol); }
+  const hasServer = () => /^https?:$/.test(location.protocol);
   function proxyUrl(path) { return PROXY + path.replace(/^\//, ""); }
   function cover(id) { return proxyUrl("cache/epub/" + id + "/pg" + id + ".cover.small.jpg"); }
 
@@ -205,11 +206,35 @@ window.Catalog = (function () {
     return new File(["<!DOCTYPE html><html" + dir + " lang=\"" + l + "\"><body>" + html + "</body></html>"], name.replace(/[\\/:*?"<>|]+/g, " ").slice(0, 120) + ".html", { type: "text/html" });
   }
 
+  // ---------------------------------------------------------------- Armiarma (euskera)
+  // La lista (js/armiarma.js, ~40 KB) se carga solo al abrir el catálogo vasco.
+  let armiarmaLoading = null;
+  function loadArmiarma() {
+    if (window.ARMIARMA) return Promise.resolve(window.ARMIARMA);
+    armiarmaLoading = armiarmaLoading || new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "js/armiarma.js";
+      s.onload = () => resolve(window.ARMIARMA || []);
+      s.onerror = () => { armiarmaLoading = null; reject(new Error("No se pudo cargar js/armiarma.js")); };
+      document.head.appendChild(s);
+    });
+    return armiarmaLoading;
+  }
+  const armiarmaBook = (m, f, title, author, year) => ({ id: "am:" + m + ":" + f, am: m + ":" + f, title, author, year: year || 0, downloads: 0 });
+  async function armiarmaList() {
+    return (await loadArmiarma()).map(([m, f, title, author, , year]) => armiarmaBook(m, f, title, author, year));
+  }
+
   // Libros infantiles y para principiantes del idioma (js/beginners.js), en el formato del catálogo.
   function beginnerBooks(l) {
-    return ((window.BEGINNERS && window.BEGINNERS[l]) || []).map((b) => b.gb
-      ? { id: b.gb, title: b.title, author: b.author, downloads: 0, level: b.level, noimages: !!b.noimages }
-      : { id: "ws:" + b.ws + ":" + b.title, ws: true, wsLang: b.ws, title: b.title, author: b.author, downloads: 0, level: b.level });
+    return ((window.BEGINNERS && window.BEGINNERS[l]) || []).map((b) => {
+      if (b.gb) return { id: b.gb, title: b.title, author: b.author, downloads: 0, level: b.level, noimages: !!b.noimages };
+      if (b.am) {
+        const i = b.am.indexOf(":");
+        return Object.assign(armiarmaBook(b.am.slice(0, i), b.am.slice(i + 1), b.title, b.author), { level: b.level });
+      }
+      return { id: "ws:" + b.ws + ":" + b.title, ws: true, wsLang: b.ws, title: b.title, author: b.author, downloads: 0, level: b.level };
+    });
   }
 
   // Mezcla el Top con los libros de nivel: si uno ya estaba en el Top, solo se le pone el distintivo.
@@ -224,12 +249,21 @@ window.Catalog = (function () {
   }
 
   async function loadList(l) {
-    const key = "pdfr.catalog." + l;
+    const key = "pdfr.catalog." + l + (SOURCES[l].armiarma ? ".am" : ""); // .am: la lista vasca de antes de Armiarma no vale
     try {
       const cached = JSON.parse(localStorage.getItem(key) || "null");
       if (cached && Date.now() - cached.ts < CACHE_TTL && cached.books.length) return cached.books;
     } catch (_) { /* sin caché */ }
     const src = SOURCES[l];
+    if (src.armiarma) {
+      // Primero Armiarma (EPUB maquetados); de Wikisource, las obras que Armiarma no tenga.
+      const am = await armiarmaList();
+      const known = new Set(am.map((b) => b.title.toLowerCase()));
+      const ws = (await wsList(l).catch(() => [])).filter((b) => !known.has(b.title.toLowerCase()));
+      const list = am.concat(ws);
+      try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), books: list })); } catch (_) { /* ignorar */ }
+      return list;
+    }
     if (src.wikisource) {
       const list = await wsList(l);
       try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), books: list })); } catch (_) { /* ignorar */ }
@@ -252,6 +286,7 @@ window.Catalog = (function () {
 
   // Origen de un libro del catálogo, tal como lo guarda la biblioteca (ver js/library.js).
   function sourceOf(book) {
+    if (book.am) return { kind: "armiarma", ref: book.am };
     return book.ws ? { kind: "wikisource", ref: book.wsLang + ":" + book.title } : { kind: "gutenberg", ref: String(book.id) };
   }
 
@@ -265,6 +300,7 @@ window.Catalog = (function () {
       const title = source.ref.slice(i + 1);
       return wsBook({ wsLang: l, title, author: rec && rec.author ? rec.author : "" });
     }
+    if (source.kind === "armiarma") return armiarmaFile(source.ref, rec);
     if (source.kind !== "gutenberg") throw new Error("origen desconocido: " + source.kind);
     if (!/^https?:$/.test(location.protocol)) throw new Error(t("catalog.needsServer"));
     const noimages = !!(rec && rec.noimages);
@@ -276,6 +312,17 @@ window.Catalog = (function () {
     if (!blob) throw new Error("EPUB no disponible");
     const name = rec && rec.name && !rec.name.startsWith("pg") ? rec.name.replace(/\.epub$/i, "") : ((rec && rec.author ? rec.author + " - " : "") + (rec && rec.title ? rec.title : "pg" + source.ref));
     return new File([blob], name.replace(/[\\/:*?"<>|]+/g, " ").slice(0, 120) + ".epub", { type: "application/epub+zip" });
+  }
+
+  // EPUB de Armiarma a través de api.php (ref = "kla:Autor, Título").
+  async function armiarmaFile(ref, rec) {
+    if (!hasServer()) throw new Error(t("catalog.needsServer"));
+    const i = ref.indexOf(":");
+    const m = ref.slice(0, i), f = ref.slice(i + 1);
+    const r = await fetch("api.php?r=book/armiarma&m=" + encodeURIComponent(m) + "&f=" + encodeURIComponent(f));
+    if (!r.ok) throw new Error("Armiarma: HTTP " + r.status);
+    const blob = await r.blob();
+    return new File([blob], f.replace(/[\\/:*?"<>|]+/g, " ").slice(0, 120) + ".epub", { type: "application/epub+zip" });
   }
 
   async function openBook(book, card) {
@@ -314,7 +361,7 @@ window.Catalog = (function () {
       rank.className = "book__rank";
       rank.textContent = String(books.indexOf(b) + 1);
       let img;
-      if (b.ws) {
+      if (b.ws || b.am) {
         img = placeholderCover(b);
       } else {
         img = document.createElement("img");
@@ -334,7 +381,7 @@ window.Catalog = (function () {
       author.textContent = b.author || "—";
       const dl = document.createElement("span");
       dl.className = "book__downloads";
-      dl.textContent = b.downloads ? b.downloads.toLocaleString(I18n.locale) + (b.ws ? " 👁" : " ↓") : "";
+      dl.textContent = b.downloads ? b.downloads.toLocaleString(I18n.locale) + (b.ws ? " 👁" : " ↓") : b.year ? String(b.year) : "";
       meta.append(title, author, dl);
       if (b.level) {
         const lv = document.createElement("span");
@@ -362,7 +409,7 @@ window.Catalog = (function () {
     $("catalog-title").textContent = levelOnly ? t("catalog.title.beg", { lang: Langs.NAMES[lang] || lang }) : t("catalog.title." + lang);
     $("catalog-source").href = SOURCES[lang].credit;
     const sub = $("catalog-sub");
-    sub.dataset.i18n = SOURCES[lang].wikisource ? "catalog.sub.ws" : "catalog.sub"; // data-i18n: se retraduce al cambiar de idioma
+    sub.dataset.i18n = SOURCES[lang].armiarma ? "catalog.sub.am" : SOURCES[lang].wikisource ? "catalog.sub.ws" : "catalog.sub"; // data-i18n: se retraduce al cambiar de idioma
     sub.textContent = t(sub.dataset.i18n);
     const hasWs = SOURCES[lang].wikisource || beginnerBooks(lang).some((b) => b.ws);
     $("catalog-credit").textContent = t(SOURCES[lang].wikisource ? "catalog.credit.ws" + (lang === "ar" ? "" : "." + lang) : hasWs ? "catalog.credit.mixed" : "catalog.credit");
