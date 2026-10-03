@@ -646,4 +646,6 @@ body[data-src="zh"] .popup__word h3 { font-family: "Microsoft YaHei", "PingFang 
 @media (max-width: 700px) {
   .modal__head { position: relative; padding-right: 56px; }
   .modal__tools > [data-close-catalog], .modal__tools > [data-close-library], .modal__tools > [data-close-langs] { position: absolute; top: 12px; right: 12px; }
+  /* El botón del enlace, debajo de la X: si no, ocupa él solo una fila entera. */
+  .modal__tools > #catalog-share { position: absolute; top: 52px; right: 12px; }
 }
