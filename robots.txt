@@ -1,0 +1,4 @@
+User-agent: *
+Disallow:
+
+Sitemap: https://glosa.dyndns.org/sitemap.xml
